@@ -1,0 +1,90 @@
+;; ref-replace.list.  Source file for make-glm for N-Best Evaluation 2008. 
+;;
+;; list of words that should be replaced in the ref!
+;; these should also be applier to hyp files. 
+;;
+;; BN-NL
+;;
+d'r => er / [ ] __ [ ]
+z'n => zijn / [ ] __ [ ]
+'t => het / [ ] __ [ ]
+'n => een / [ ] __ [ ]
+'m => hem / [ ] __ [ ]
+'k => ik / [ ] __ [ ]
+'r => er / [ ] __ [ ]
+'ns => eens / [ ] __ [ ]
+d'ruit => eruit / [ ] __ [ ]
+restaurant- => restaurant / [ ] __ [ ]
+jeugd- => jeugd / [ ] __ [ ]
+-verbetering => verbetering / [ ] __ [ ]
+'20 => twintig / [ ] __ [ ]
+rook- => rook / [ ] __ [ ]
+nen => een / [ ] __ [ ]
+zometeen => zo meteen / [ ] __ [ ]
+goeiemorgen => goedemorgen / [ ] __ [ ]
+goeie => goede / [ ] __ [ ]
+hu => [uh] / [ ] __ [ ]
+éénendertig => eenendertig / [ ] __ [ ]
+éénenzestig => eenenzestig / [ ] __ [ ]
+éénenveertigjarige => eenenveertigjarige / [ ] __ [ ]
+etcetera => et cetera / [ ] __ [ ]
+;; join.list.  Source file for make-glm for N-Best Evaluation 2008. 
+;;
+;; Occurances in the .hyp file that are allowed to be split w.r.t.
+;; a more correct compount word in the reference. 
+;; Since csrfilt.sh can't merge ctm files, as a temporary solution we split 
+;; both ref and hyp file
+;;
+;; format is:
+;; <merged> - <split> <words>
+;;
+;; this allows us to quickly move entries between splits and merges...
+;;
+;; BN-NL
+tewerk => te werk / [ ] __ [ ]
+;; list of rules that don't follow rules...
+;; 
+;; opt-replace.  Source file for make-glm for N-Best Evaluation 2008.
+;;
+;; List of files that optionally may be replaced in hyp.  
+;; Ref has preferred spelling
+;;
+;; BN-NL
+;;
+[ongelooflijk] => [{ ongelooflijk / ongelofelijk }] / [ ] __ [ ]
+[gisterenavond] => [{ gisterenavond / gisteravond }] / [ ] __ [ ]
+[sjiitische] => [{ sjiitische / shi'itische }] / [ ] __ [ ]
+[concept-] => [{ concept- / concept }] / [ ] __ [ ]
+[NAVO-] => [{ NAVO- / NAVO }] / [ ] __ [ ]
+[uh] => [{ uh / %HESITATION }] / [ ] __ [ ]
+[uhm] => [{ uh / %HESITATION }] / [ ] __ [ ]
+;;
+;; BN-VL
+[Darfour] => [{ Darfour / Darfur }] / [ ] __ [ ]
+[rekeninghouden] => [{ rekeninghouden / rekening houden }] / [ ] __ [ ]
+[S.S.] => [{ S.S. / SS }] / [ ] __ [ ]
+[iederéén] => [{ iederéén / iedereen }] / [ ] __ [ ]
+[géén] => [{ géén / geen }] / [ ] __ [ ]
+[Kongo] => [{ Kongo / Congo }] / [ ] __ [ ]
+[Sjiieten] => [{ Sjiieten / Shi'iten }] / [ ] __ [ ]
+[verkoopsvoorwaarden] => [{ verkoopsvoorwaarden / verkoopvoorwaarden }] / [ ] __ [ ]
+[Al Qaeda] => [{ Al Qaeda / Al Quaida }] / [ ] __ [ ]
+[Mijnheer] => [{ Mijnheer / Meneer }] / [ ] __ [ ]
+[verzekeringsmakelaar] => [{ verzekeringsmakelaar / verzekeringmakelaar }] / [ ] __ [ ]
+[van afhangen] => [{ van afhangen / vanaf hangen }] / [ ] __ [ ]
+[alstublieft] => [{ alstublieft / alsjeblieft }] / [ ] __ [ ]
+[d'n] => [{ d'n / de }] / [ ] __ [ ]
+[zwartepiet] => [{ zwartepiet / Zwarte Piet }] / [ ] __ [ ]
+[zwartepieten] => [{ zwartepieten / Zwarte Pieten }] / [ ] __ [ ]
+[elitekorps] => [{ elitekorps / elitecorps }] / [ ] __ [ ]
+[drugverslaafden] => [{ drugverslaafden / drugsverslaafden }] / [ ] __ [ ]
+[shiitische] => [{ shiitische / shi'itische }] / [ ] __ [ ]
+[mijnheer] => [{ mijnheer / meneer }] / [ ] __ [ ]
+[mekaar] => [{ mekaar / elkaar }] / [ ] __ [ ]
+[gisteravond] => [{ gisteravond / gisterenavond }] / [ ] __ [ ]
+[goeiemiddag] => [{ goeiemiddag / goedemiddag }] / [ ] __ [ ]
+[klimaatsveranderingen] => [{ klimaatsveranderingen / klimaatveranderingen }] / [ ] __ [ ]
+[d'rover] => [{ d'rover / er over }] / [ ] __ [ ]
+[marktonderzoekbureau] => [{ marktonderzoekbureau / marktonderzoeksbureau }] / [ ] __ [ ]
+[Noordwestkust] => [{ Noordwestkust / Noord-Westkust }] / [ ] __ [ ]
+[carnavalvierders] => [{ carnavalvierders / carnavalsvierders }] / [ ] __ [ ]
