@@ -7,14 +7,14 @@ decoder, including creating FST's from the (automatically downloaded) acoustic a
 
 The decode script is called with:
 
-./decode.sh [options] <speech-dir>|<speech-file>|<txt-file containing list of source material> <output-dir>
+'./decode.sh [options] <speech-dir>|<speech-file>|<txt-file containing list of source material> <output-dir>'
 
 All parameters before the last one are automatically interpreted as one of the three types listed above. 
 After the process is done, the main results are produced in <output-dir>/1Best.ctm. This file contains a list of all
 words that were recognised in the audio, with one word per line. The lines follow the standard .ctm format:
 
-<source file> 1 <start time> <duration> <word hypothesis> <posterior probability> 
+'<source file> 1 <start time> <duration> <word hypothesis> <posterior probability>'
 
 As part of the transcription process, the LIUM speech diarization toolkit is utilized. This produces a directory 
-<output-dir>/liumlog, which contains .seg files that provide information about the speaker diarization. For more
+'<output-dir>/liumlog', which contains .seg files that provide information about the speaker diarization. For more
 information on the content of these files, please visit http://www-lium.univ-lemans.fr/diarization/.
