@@ -10,7 +10,7 @@ The decode script is called with:
 `./decode.sh [options] <speech-dir>|<speech-file>|<txt-file containing list of source material> <output-dir>`
 
 All parameters before the last one are automatically interpreted as one of the three types listed above. 
-After the process is done, the main results are produced in <output-dir>/1Best.ctm. This file contains a list of all
+After the process is done, the main results are produced in `<output-dir>/1Best.ctm`. This file contains a list of all
 words that were recognised in the audio, with one word per line. The lines follow the standard .ctm format:
 
 `<source file> 1 <start time> <duration> <word hypothesis> <posterior probability>`
