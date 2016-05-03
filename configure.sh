@@ -2,33 +2,23 @@
 
 [ -f ./path.sh ] && . ./path.sh; # source the path.
 
-modelpack=/home/laurensw/Modelpack
+# put the place where you would like to download (and unpack the modelpack)
+modelpack=/home/laurensw/TestModelpack
 
 # the graph should match the lm_small language model, if this graph does not exist it will be created
-# lm_small=$modelpack/LM/DistModels
-lm_small=$modelpack/LM/Kranten
-# lm_large=$modelpack/LM/DistModels.const
-lm_large=$modelpack/LM/Kranten.const
-# graph_name=graph_DistModels_newAM
-# graph_name=graph_DistModels
-graph_name=graph_Kranten
+lm_small=$modelpack/LM/3gpr
+lm_large=$modelpack/LM/4gpr.const
+graph_name=graph_ModelPack
 
-# under model_root, a BN and CTS subdir are expected, each with subdirs equal to the am_* variables below
-# model_root=$modelpack/AM/CGN_nl_nbest
-model_root=$modelpack/AM/CGN_nl_nbest2
+# under model_root, a BN subdir is expected, each with subdirs equal to the am_* variables below
+model_root=$modelpack/AM
 am_fp=tri3
-am_fp_ali=tri3_ali
 am_fmmi=tri3_fmmi_b0.1
 am_sgmm2=sgmm2_3b
 am_sgmm2_mmi=sgmm2_3b_mmi_b0.1
-am_nnet=dnn4_pretrain-dbn_dnn_smbr_i1lats
 am_fmllr_bn=dnn8c_fmllr-gmm
 am_nnet_bn=dnn8f_pretrain-dbn_dnn_smbr
 bn_feat=dnn8a_bn-feat
-am_nnet2=nnet2_online/nnet_ms_a
-am_nnet2=nnet2_online/nnet_ms_a_wsj
-am_nnet2=nnet2_online/nnet3_tdnn_bl
-extractor=nnet2_online/extractor
 
 # create symlinks to the scripts
 if [ ! -h steps ]; then
@@ -39,8 +29,14 @@ if [ ! -h utils ]; then
     ln -s $KALDI_ROOT/egs/wsj/s5/utils utils
 fi
 
+# make sure the models are present
+if [ ! -d $modelpack ]; then
+	mkdir -p $modelpack
+	wget -P $modelpack http://beehub.nl/open-source-spraakherkenning-NL/ModelPack.tar.gz
+	tar -xvzf $modelpack/ModelPack.tar.gz -C $modelpack
+fi
+
 # create symlinks to the acoustic models
-# for model_sub in BN CTS; do
 for model_sub in BN; do
 	mkdir -p models/$model_sub  	
 	for model in ${am_fp} ${am_fp_ali} ${am_fmmi} ${am_sgmm2} ${am_sgmm2_mmi} ${am_nnet} ${am_nnet2} ${extractor} ${am_fmllr_bn} ${am_nnet_bn} ${bn_feat}; do				
@@ -69,10 +65,6 @@ for model_sub in BN; do
 
 		# don't make a graph for these models
 		for skipgraph in ${am_nnet_bn} ${am_fp_ali} ${am_sgmm2_mmi} ${am_nnet} ${am_nnet2} ${extractor} ${bn_feat}; do
-			if [ "$model" = "$skipgraph" ]; then continue 2; fi
-		done
-		
-		for skipgraph in ${am_fmmi} ${am_sgmm2} ${am_fp}; do
 			if [ "$model" = "$skipgraph" ]; then continue 2; fi
 		done
 

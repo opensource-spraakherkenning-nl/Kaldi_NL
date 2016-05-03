@@ -85,7 +85,7 @@ graph=graph_lm_small
 smallLM=3gpr
 largeLM=4gpr_const
 
-rnnLM=/home/laurensw/Data/LM/RNN		        # if rnn=true, use this model for rnn-rescoring after largeLM rescoring
+rnnLM=						        # if rnn=true, use this model for rnn-rescoring after largeLM rescoring
 
 [ -f ./path.sh ] && . ./path.sh; # source the path.
 
@@ -303,9 +303,6 @@ if [ $stage -le 4 ]; then
 	     		# largeLM rescoring
      		time steps/lmrescore_const_arpa.sh --skip-scoring true $lmloc/$smallLM $lmloc/$largeLM $data/$type $resultsloc/$type $rescore/$type           
      		if $rnn; then
-			# time steps/lmrescore_rnnlm_lat.sh --cmd $cmd --skip-scoring true --inv-acwt $inv_acoustic_scale --weight $rnnweight $lmloc/$smallLM $rnnLM $data/$type $resultsloc/$type $rnnrescore/$type
-	      	
-       			# time steps/lmrescore_rnnlm_lat.sh --cmd $cmd --skip-scoring true --inv-acwt $inv_acoustic_scale --weight $rnnweight $lmloc/$largeLM $rnnLM $data/$type $rescore/$type $rnnrescore/$type
 				time steps/rnnlmrescore.sh --cmd $cmd --skip-scoring true --rnnlm-ver faster-rnnlm/faster-rnnlm --N $rnnnbest --inv-acwt $inv_acoustic_scale $rnnweight $lmloc/$largeLM $rnnLM $data/$type $rescore/$type $rnnrescore/$type
       	fi
 		fi
@@ -369,12 +366,12 @@ if [ $stage -le 5 ]; then
 	done
 
 	# combine the ctms and do postprocessing: sort, combine numbers, restore compounds, filter with glm
+#	cat $data/ALL/1Best.raw.ctm | sort -k1,1 -k3,3n | local/remove_hyphens.pl | \
+#		perl local/combine_numbers.pl | sort -k1,1 -k3,3n | local/compound-restoration.pl | grep -v uh | grep -v '<unk>' | \
+#		csrfilt.sh -s -i ctm -t hyp local/nbest-eval-2008.glm >$data/ALL/1Best.ctm
 	cat $data/ALL/1Best.raw.ctm | sort -k1,1 -k3,3n | local/remove_hyphens.pl | \
-		perl local/combine_numbers.pl | sort -k1,1 -k3,3n | local/compound-restoration.pl | grep -v uh | grep -v '<unk>' | \
-		csrfilt.sh -s -i ctm -t hyp local/nbest-eval-2008.glm >$data/ALL/1Best.ctm >$data/ALL/1Best.ctm
-#    cat $data/ALL/1Best.raw.ctm | sort -k1,1 -k3,3n | local/remove_hyphens.pl | \
-#        perl local/combine_numbers.pl | sort -k1,1 -k3,3n | local/compound-restoration.pl | \
-#        grep -v uh >$data/ALL/1Best.ctm
+		perl local/combine_numbers.pl | sort -k1,1 -k3,3n | local/compound-restoration.pl | grep -v uh | \
+		grep -v '<unk>' >$data/ALL/1Best.ctm
 
 	if $multichannel; then
 		cat $data/ALL/1Best.ctm | sed 's/\.[0-9] / /' | sort -k1,1 -k3,3n >$result/1Best.ctm    # remove channel from id
