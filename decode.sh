@@ -36,7 +36,7 @@
 #
 
 cmd=run.pl
-nj=8                    # maximum number of simultaneous jobs used for feature generation and decoding
+nj=4                    # maximum number of simultaneous jobs used for feature generation and decoding
 stage=1
 num_threads=1           # used for decoding
 inv_acoustic_scale=11   # used for 1-best and N-best generation
@@ -189,7 +189,8 @@ if [ $stage -le 1 ]; then
 	cat $data/ALL/utt2spk.tmp | sort -k2,2 -k1,1 -u >$data/ALL/utt2spk
 	rm $data/ALL/utt2spk.tmp $data/foo.wav
 	local/change_segment_names.pl $data								# change names of utterances for sorting purposes
-	cat $data/*.stm | sort -k1,1 -k4,4n >$data/ALL/ref.stm				# combine individual stm's
+	cat $data/*.stm | sort -k1,1 -k4,4n >$data/ALL/ref.stm	# combine individual stm's
+	cat $data/*.glm >$data/ALL/all.glm								# copy any .glm's	
 	utils/fix_data_dir.sh $data/ALL
 	cp -r $data/ALL/liumlog $result
 fi
@@ -366,13 +367,16 @@ if [ $stage -le 5 ]; then
 	done
 
 	# combine the ctms and do postprocessing: sort, combine numbers, restore compounds, filter with glm
-#	cat $data/ALL/1Best.raw.ctm | sort -k1,1 -k3,3n | local/remove_hyphens.pl | \
-#		perl local/combine_numbers.pl | sort -k1,1 -k3,3n | local/compound-restoration.pl | grep -v uh | grep -v '<unk>' | \
-#		csrfilt.sh -s -i ctm -t hyp local/nbest-eval-2008.glm >$data/ALL/1Best.ctm
-	cat $data/ALL/1Best.raw.ctm | sort -k1,1 -k3,3n | local/remove_hyphens.pl | \
-		perl local/combine_numbers.pl | sort -k1,1 -k3,3n | local/compound-restoration.pl | grep -v uh | \
-		grep -v '<unk>' >$data/ALL/1Best.ctm
-
+	if [ -s $data/ALL/all.glm ]; then	
+		cat $data/ALL/1Best.raw.ctm | sort -k1,1 -k3,3n | local/remove_hyphens.pl | \
+			perl local/combine_numbers.pl | sort -k1,1 -k3,3n | local/compound-restoration.pl | \
+			grep -E --text -v 'uh|<unk>' | csrfilt.sh -s -i ctm -t hyp $data/ALL/all.glm >$data/ALL/1Best.ctm
+	else
+		cat $data/ALL/1Best.raw.ctm | sort -k1,1 -k3,3n | local/remove_hyphens.pl | \
+			perl local/combine_numbers.pl | sort -k1,1 -k3,3n | local/compound-restoration.pl | \
+			grep -E --text -v 'uh|<unk>' >$data/ALL/1Best.ctm
+	fi
+	
 	if $multichannel; then
 		cat $data/ALL/1Best.ctm | sed 's/\.[0-9] / /' | sort -k1,1 -k3,3n >$result/1Best.ctm    # remove channel from id
 	else
