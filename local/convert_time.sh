@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #Convert seconds to h:m:s format
 
 read S

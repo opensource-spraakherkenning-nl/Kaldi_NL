@@ -64,7 +64,7 @@ acwt=0.083333           # Acoustic weight used in getting fMLLR transforms, and 
 beam=13.0
 lattice_beam=6.0
 
-modeltype="nnet_bn"		# or fmmi, or nnet, or fmmlr, or sggm
+modeltype="nnet_bn"		# fmmi, or nnet_bn, or fmmlr, or sgmm2
 
 rnn=false               # if true, do RNN rescoring
 rnnnbest=1000           # if doing RNN rescoring use this amount of alternatives

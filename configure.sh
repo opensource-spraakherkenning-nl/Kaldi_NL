@@ -7,7 +7,7 @@ modelpack=/home/laurensw/TestModelpack
 
 # the graph should match the lm_small language model, if this graph does not exist it will be created
 lm_small=$modelpack/LM/3gpr
-lm_large=$modelpack/LM/4gpr.const
+lm_large=$modelpack/LM/4gpr_const
 graph_name=graph_ModelPack
 
 # under model_root, a BN subdir is expected, each with subdirs equal to the am_* variables below
