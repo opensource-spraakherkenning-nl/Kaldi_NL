@@ -78,6 +78,7 @@ nbest=0                         # if value >0, generate NBest.ctm with this amou
 multichannel=false              # by default assume that the input files are monophonic (or map them to mono), otherwise analyse channels separately
 singlespeaker=false             # by default assume multiple speakers in input, otherwise assume one speaker (per channel)
 dorescore=true                  # rescore with largeLM as default
+copyall=false							# copy all source files (true) or use symlinks (false)
 
 # language models used for rescoring. smallLM must match with the graph of acoustic+language model
 # largeLM must be a 'const arpa' LM
@@ -107,6 +108,7 @@ if [ $# -lt 2 ]; then
     echo "  --nbest <n>                              # produce <n>-best ctms (without posteriors)"
     echo "  --cts <true/false>                       # use cts models for telephone speech, default is false."
     echo "  --file-types <extensions>                # include audio files with the given extensions, default \"wav mp3\" "
+    echo "  --copyall <true/false>                   # copy all source files or use symlinks, default is false (use symlinks)"
     exit 1;
 fi
 
@@ -161,14 +163,26 @@ if [ $stage -le 1 ]; then
 			filetype=$(file -ib $i)
 			if [[ $filetype =~ .*audio.* ]]; then
 				echo "Argument $i is a sound file, using it as audio"		
-				cp $i $data/
+				if $copyall; then			
+					cp $i $data/
+				else
+					ln -s -f $i $data
+				fi
 			elif [[ $filetype =~ .*text.* ]]; then
 				echo "Argument $i is a text file, using it as list of files to copy"
-				xargs -a $i cp -t $data
+				if $copyall; then				
+					xargs -a $i cp -t $data
+				else
+					xargs -a $i ln -s -t $data
+				fi
 			fi
 		elif [ -d $i ]; then
 			echo "Argument $i is a directory, copying contents"		
-			cp -a $i/* $data		
+			if $copyall; then
+				cp -a $i/* $data
+			else
+				ln -s -f $i/* $data
+			fi
 		else
 			echo "Argument $i cannot be processed - skipping"		
 		fi
@@ -221,7 +235,7 @@ if [ $stage -le 2 ]; then
 		steps/compute_cmvn_stats.sh $test_bn $test_bn/log $test_bn/data || exit 1
 		
 		# the standard scripts don't copy ref.stm, or test.uem
-		cp $data/ALL_orig/ref.stm $data/ALL_orig/test.uem $data/ALL/ 2>/dev/null
+		cp $data/ALL_orig/ref.stm $data/ALL_orig/test.uem $data/ALL_orig/all.glm $data/ALL/ 2>/dev/null
 	else
 		steps/make_mfcc.sh --nj $this_nj --mfcc-config $inter/mfcc.conf $data/ALL $data/ALL/log $inter/mfcc || exit 1
 		steps/compute_cmvn_stats.sh $data/ALL $data/ALL/log $inter/mfcc || exit 1
@@ -256,39 +270,39 @@ if [ $stage -le 3 ]; then
 			fmllr_opts=$fmllr_bn_opts
 		fi
 		
-		mkdir -p $fmllr_decode $fmllr_decode.si $resultsloc
-		
-		if [ ! -d $fmllr_decode/$type ]; then			
-			foo=`mktemp -d -p $fmllr_models`
+		if [ ! -d $fmllr_decode/$type ]; then
+			rm -f $fmllr_models/output $fmllr_models/output.si
+			mkdir -p $fmllr_decode/$type $fmllr_decode.si/$type
+			ln -f -s $(pwd)/$fmllr_decode/$type $fmllr_models/output
+			ln -f -s $(pwd)/$fmllr_decode.si/$type $fmllr_models/output.si
+			
 			echo -e "First pass decode\t$type\t$foo" >$inter/stage 
 			# fmllr decoding
-        		time steps/decode_fmllr.sh $fmllr_opts --nj $this_nj $fmllr_models/$graph $data/$type $foo
-        		rm -rf $fmllr_decode/$type ${fmllr_decode}.si/$type
-        		mv -f $foo $fmllr_decode/$type      # standard scripts place results in subdir of model directory..
-        		mv -f ${foo}.si ${fmllr_decode}.si/$type
+ 			time steps/decode_fmllr.sh $fmllr_opts --nj $this_nj $fmllr_models/$graph $data/$type $fmllr_models/output
 		fi
     	 
 		if [ $modeltype = "fmllr" ]; then continue; fi
 		
 		models=models/$bw/$modeltype
+		rm -f $models/output
+		mkdir -p $resultsloc/$type
+		ln -f -s $(pwd)/$resultsloc/$type $models/output
+		
 		foo=`mktemp -d -p $models`
 		echo -e "Second pass decode\t$type\t$foo" >$inter/stage 	
 		case $modeltype in 
-			fmmi)		time steps/decode_fmmi.sh $fmmi_opts --nj $this_nj --transform-dir $fmllr_decode/$type $models/$graph $data/$type $foo;;
+			fmmi)		time steps/decode_fmmi.sh $fmmi_opts --nj $this_nj --transform-dir $fmllr_decode/$type $models/$graph $data/$type $models/output;;
 			sgmm2_mmi)	p1_models=models/$bw/sgmm2
-						foop1=`mktemp -d -p $p1_models`
-						rm -rf $sgmm2_decode/$type
-						time steps/decode_sgmm2.sh $sgmm2_opts --nj $this_nj --transform-dir $fmllr_decode/$type $p1_models/$graph $data/$type $foop1               		
-						time steps/decode_sgmm2_rescore.sh --skip-scoring true --transform-dir $fmllr_decode/$type $p1_models/$graph $data/$type $foop1 $foo        
-						mkdir -p $sgmm2_decode        					
-        					mv $foop1 $sgmm2_decode/$type;;
-        		nnet)		steps/nnet/make_fmllr_feats.sh --nj $this_nj --transform-dir $fmllr_decode/$type $data/$type/data_fmllr $data/$type $fmllr_models $data/$type/log $data/$type/data_fmllr/data		
-  						time steps/nnet/decode.sh --nj $this_nj --config conf/decode_dnn.config --acwt 0.1 $fmllr_models/$graph $data/$type/data_fmllr $foo;;
+						rm -f $p1_models/output
+						mkdir -p $sgmm2_decode/$type
+						ln -f -s $(pwd)/$sgmm2_decode/$type $p1_models/output
+						time steps/decode_sgmm2.sh $sgmm2_opts --nj $this_nj --transform-dir $fmllr_decode/$type $p1_models/$graph $data/$type $p1_models/output               		
+						time steps/decode_sgmm2_rescore.sh --skip-scoring true --transform-dir $fmllr_decode/$type $p1_models/$graph $data/$type $p1_models/output $models/output;;        
+			nnet)		steps/nnet/make_fmllr_feats.sh --nj $this_nj --transform-dir $fmllr_decode/$type $data/$type/data_fmllr $data/$type $fmllr_models $data/$type/log $data/$type/data_fmllr/data		
+  						time steps/nnet/decode.sh --nj $this_nj --config conf/decode_dnn.config --acwt 0.1 $fmllr_models/$graph $data/$type/data_fmllr $models/output;;
 			nnet_bn)		steps/nnet/make_fmllr_feats.sh --nj $this_nj --transform-dir $fmllr_decode/$type $data/$type/data_fmllr_bn $data/$type $fmllr_models $data/$type/log $data/$type/data_fmllr_bn/data
-						time steps/nnet/decode.sh --nj $this_nj --config conf/decode_dnn.config --acwt 0.1 --nnet $models/final.nnet $fmllr_models/$graph $data/$type/data_fmllr_bn $foo;;      
-      	esac
-      	rm -rf $resultsloc/$type   
-	   	mv -f $foo $resultsloc/$type	
+						time steps/nnet/decode.sh --nj $this_nj --config conf/decode_dnn.config --acwt 0.1 --nnet $models/final.nnet $fmllr_models/$graph $data/$type/data_fmllr_bn $models/output;;      
+      esac
 	done
 fi
 
