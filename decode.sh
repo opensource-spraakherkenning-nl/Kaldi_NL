@@ -90,6 +90,7 @@ multichannel=false              # by default assume that the input files are mon
 singlespeaker=false             # by default assume multiple speakers in input, otherwise assume one speaker (per channel)
 dorescore=true                  # rescore with largeLM as default
 copyall=false							# copy all source files (true) or use symlinks (false)
+overwrite=true					# overwrite the 1st pass output if already present
 
 # language models used for rescoring. smallLM must match with the graph of acoustic+language model
 # largeLM must be a 'const arpa' LM
@@ -214,8 +215,8 @@ if [ $stage -le 1 ]; then
 	cat $data/ALL/utt2spk.tmp | sort -k2,2 -k1,1 -u >$data/ALL/utt2spk
 	rm $data/ALL/utt2spk.tmp $data/foo.wav
 	local/change_segment_names.pl $data								# change names of utterances for sorting purposes
-	cat $data/*.stm | sort -k1,1 -k4,4n >$data/ALL/ref.stm	# combine individual stm's
-	cat $data/*.glm >$data/ALL/all.glm								# copy any .glm's	
+	cat $data/*.stm 2>/dev/null | sort -k1,1 -k4,4n >$data/ALL/ref.stm			# combine individual stm's
+	cat $data/*.glm 2>/dev/null >$data/ALL/all.glm								# copy any .glm's	
 	utils/fix_data_dir.sh $data/ALL
 	cp -r $data/ALL/liumlog $result
 fi
@@ -283,7 +284,7 @@ if [ $stage -le 3 ]; then
 		
 	 	mkdir -p $fmllr_decode $fmllr_decode.si $resultsloc
 		
-		if [ ! -d $fmllr_decode/$type ]; then
+		if [ ! -d $fmllr_decode/$type ] || $overwrite; then
 			foo=`mktemp -d -p $fmllr_models` 
 			
 			echo -e "First pass decode\t$type\t$foo" >$inter/stage 
