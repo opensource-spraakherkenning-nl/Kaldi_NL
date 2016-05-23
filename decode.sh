@@ -7,32 +7,43 @@
 #
 
 #
-#   Decode audio-files to produce transcriptions and additional info in a target directory
+#   Decode audio files to produce transcriptions and additional info in a target directory
 #
 #		Usage: ./decode.sh [options] <speech-dir>|<speech-file>|<txt-file containing list of source material> <output-dir>
 #
-#   Use the configure.sh script to create the required links to the relevant utilities of Kaldi and the models.
+#   Use the configure.sh script to create the required links to the relevant utilities of Kaldi 
+#	and to download and link to the models.
 #
-#   If the source directory contains .ubm files, only those sections will be transcribed
-#   If the source directory contains .stm files, it is assumed to contain a transcription of the audio and
-#   the results are automatically evaluated using asclite (case insensitive). 
+# 	All input files that are specified on the command-line are linked or copied to a working directory, which is
+#	<output-dir>/Intermediate/Data. From here, all files with a chosen extension (default wav, mp3) are 
+#	used as input for the Kaldi speech transcription. Certain additional files may be present in the working
+#	directory, specifically those with the following extensions:
 #
-#   All selected files/directories are copied to the target directory for processing, so make sure there is 
-#   enough space available in the target location. Files are identified by their base filename, so make sure there
-#	 are no duplicate names in a batch!
+#   .ubm:	used to define the sections in the files that should be transcribed
+#	.stm:	containing transcriptions for evaluation purposes. If present, asclite will be invoked
+#			to evaluate the results (case insensitive)
+#	.glm:	contains definitions for use by csrfilt.sh (part of sctk in the kaldi/tools directory), which are applied
+#			to the transcription
 #
-#   The following steps are taken:
-#	   1. All source files which are specified in the command line are copied to the source directory
-#     	The source directory is scanned for audio, which is then processed by the LIUM speaker diarization tool.
-#        The results are used to create the files needed for Kaldi: wav.scp, segments, utt2spk, spk2utt, spk2gender
-#     2. MFCC features and CMVN stats are generated. The data may be split into 4 sets: Male & Female Broadcast News and
-#        Telephone speech, though this is not needed if a single acoustic model is used.
-#     3. Decoding is done in several stages: FMLLR (2-pass), then whichever method is selected (fmmi, sgmm, nnet, nnet_bn), 
-#		   using a relatively small trigram language model. 
-#     4. The resulting lattices are rescored using a larger 4-gram language model.
-#     5. 1-best transcriptions are extracted from the rescored lattices and results are gathered into 1Best.ctm which contains
-#        the transcriptions for all of the audio in the source directory. Optionally an NBest ctm can also be generated.
-#     6. If a reference transcription is available, an evaluation is done using asclite.
+#	In case you want to copy all material, make sure there is enough space available in the target location. 
+#	Files are identified by their base filename, so there must be no duplicate names in a batch!
+#
+#   The procedure is as follows:
+#		1.	All source files which are specified on the command line are copied or linked to <output-dir>/Intermediate/Data
+#     	 	This directory is scanned for audio, which is then processed by the LIUM speaker diarization tool so as to produce
+#			chunks of around 20 seconds in length.
+#			The LIUM segmentation and source files are then processed to create the files needed for Kaldi: 
+#				wav.scp, segments, utt2spk, spk2utt, spk2gender
+#		2. 	MFCC features and CMVN stats are generated.
+#		3.	Speech transcription is performed. First there is an FMLLR stage (2-passes), then whichever method is selected (fmmi, sgmm2, nnet_bn), 
+#			using a relatively small trigram language model. 
+#		4.	The resulting lattices are rescored using a larger 4-gram language model.
+#		5.	1-best transcriptions are extracted from the rescored lattices and results are gathered into 1Best.ctm which contains
+#			the transcriptions for all of the audio in the source directory. The segmentation from (1) is then used to create a 1Best.txt file.
+#			Optionally an NBest ctm can also be generated. Results are filtered to remove 'uh' and '<unk>', numbers and compounds are rewritten
+#			to follow normal Dutch practice.
+# 		6.	If a reference transcription (.stm) is available, an evaluation is performed using asclite. Results of the evalluation can then be 
+#			found in <output-dir>/1Best.ctm.{dtl,pra,sys}
 #
 
 cmd=run.pl
@@ -270,39 +281,50 @@ if [ $stage -le 3 ]; then
 			fmllr_opts=$fmllr_bn_opts
 		fi
 		
+	 	mkdir -p $fmllr_decode $fmllr_decode.si $resultsloc
+		
 		if [ ! -d $fmllr_decode/$type ]; then
-			rm -f $fmllr_models/output $fmllr_models/output.si
-			mkdir -p $fmllr_decode/$type $fmllr_decode.si/$type
-			ln -f -s $(pwd)/$fmllr_decode/$type $fmllr_models/output
-			ln -f -s $(pwd)/$fmllr_decode.si/$type $fmllr_models/output.si
+			foo=`mktemp -d -p $fmllr_models` 
 			
 			echo -e "First pass decode\t$type\t$foo" >$inter/stage 
 			# fmllr decoding
- 			time steps/decode_fmllr.sh $fmllr_opts --nj $this_nj $fmllr_models/$graph $data/$type $fmllr_models/output
+			time steps/decode_fmllr.sh $fmllr_opts --nj $this_nj $fmllr_models/$graph $data/$type $foo 
+            rm -rf $fmllr_decode/$type ${fmllr_decode}.si/$type 
+            mv -f $foo $fmllr_decode/$type      # standard scripts place results in subdir of model directory.. 
+            mv -f ${foo}.si ${fmllr_decode}.si/$type 
 		fi
     	 
 		if [ $modeltype = "fmllr" ]; then continue; fi
 		
 		models=models/$bw/$modeltype
-		rm -f $models/output
-		mkdir -p $resultsloc/$type
-		ln -f -s $(pwd)/$resultsloc/$type $models/output
 		
-		foo=`mktemp -d -p $models`
-		echo -e "Second pass decode\t$type\t$foo" >$inter/stage 	
+		# nnet decode supports alternative decode locations, fmmi & sgmm decode do not
+		if [ $modeltype = "fmmi" -o $modeltype = "sgmm2_mmi" ]; then 
+			foo=`mktemp -d -p $models`
+			echo -e "Second pass decode\t$type\t$foo" >$inter/stage 
+		else
+			echo -e "Second pass decode\t$type\t${resultsloc}/$type" >$inter/stage 	
+		fi
+		
 		case $modeltype in 
-			fmmi)		time steps/decode_fmmi.sh $fmmi_opts --nj $this_nj --transform-dir $fmllr_decode/$type $models/$graph $data/$type $models/output;;
-			sgmm2_mmi)	p1_models=models/$bw/sgmm2
-						rm -f $p1_models/output
-						mkdir -p $sgmm2_decode/$type
-						ln -f -s $(pwd)/$sgmm2_decode/$type $p1_models/output
-						time steps/decode_sgmm2.sh $sgmm2_opts --nj $this_nj --transform-dir $fmllr_decode/$type $p1_models/$graph $data/$type $p1_models/output               		
-						time steps/decode_sgmm2_rescore.sh --skip-scoring true --transform-dir $fmllr_decode/$type $p1_models/$graph $data/$type $p1_models/output $models/output;;        
-			nnet)		steps/nnet/make_fmllr_feats.sh --nj $this_nj --transform-dir $fmllr_decode/$type $data/$type/data_fmllr $data/$type $fmllr_models $data/$type/log $data/$type/data_fmllr/data		
-  						time steps/nnet/decode.sh --nj $this_nj --config conf/decode_dnn.config --acwt 0.1 $fmllr_models/$graph $data/$type/data_fmllr $models/output;;
-			nnet_bn)		steps/nnet/make_fmllr_feats.sh --nj $this_nj --transform-dir $fmllr_decode/$type $data/$type/data_fmllr_bn $data/$type $fmllr_models $data/$type/log $data/$type/data_fmllr_bn/data
-						time steps/nnet/decode.sh --nj $this_nj --config conf/decode_dnn.config --acwt 0.1 --nnet $models/final.nnet $fmllr_models/$graph $data/$type/data_fmllr_bn $models/output;;      
-      esac
+			fmmi)    time steps/decode_fmmi.sh $fmmi_opts --nj $this_nj --transform-dir $fmllr_decode/$type $models/$graph $data/$type $foo;; 
+      		sgmm2_mmi)	p1_models=models/$bw/sgmm2
+						foop1=`mktemp -d -p $p1_models` 
+            			rm -rf $sgmm2_decode/$type 
+            			time steps/decode_sgmm2.sh $sgmm2_opts --nj $this_nj --transform-dir $fmllr_decode/$type $p1_models/$graph $data/$type $foop1                    
+            			time steps/decode_sgmm2_rescore.sh --skip-scoring true --transform-dir $fmllr_decode/$type $p1_models/$graph $data/$type $foop1 $foo         
+            			mkdir -p $sgmm2_decode                   
+                  		mv $foop1 $sgmm2_decode/$type;; 
+            nnet)    	steps/nnet/make_fmllr_feats.sh --nj $this_nj --transform-dir $fmllr_decode/$type $data/$type/data_fmllr $data/$type $fmllr_models $data/$type/log $data/$type/data_fmllr/data     
+              			time steps/nnet/decode.sh --nj $this_nj --srcdir $models --config conf/decode_dnn.config --acwt 0.1 $fmllr_models/$graph $data/$type/data_fmllr $resultsloc/$type;;
+			nnet_bn)	steps/nnet/make_fmllr_feats.sh --nj $this_nj --transform-dir $fmllr_decode/$type $data/$type/data_fmllr_bn $data/$type $fmllr_models $data/$type/log $data/$type/data_fmllr_bn/data
+						time steps/nnet/decode.sh --nj $this_nj --srcdir $models --config conf/decode_dnn.config --acwt 0.1 $fmllr_models/$graph $data/$type/data_fmllr_bn $resultsloc/$type;;       
+        esac 
+        
+        if [ $modeltype = "fmmi" -o $modeltype = "sgmm2_mmi" ]; then
+        	rm -rf $resultsloc/$type    
+       		mv -f $foo $resultsloc/$type
+       	fi   
 	done
 fi
 
@@ -319,7 +341,7 @@ if [ $stage -le 4 ]; then
      		time steps/lmrescore_const_arpa.sh --skip-scoring true $lmloc/$smallLM $lmloc/$largeLM $data/$type $resultsloc/$type $rescore/$type           
      		if $rnn; then
 				time steps/rnnlmrescore.sh --cmd $cmd --skip-scoring true --rnnlm-ver faster-rnnlm/faster-rnnlm --N $rnnnbest --inv-acwt $inv_acoustic_scale $rnnweight $lmloc/$largeLM $rnnLM $data/$type $rescore/$type $rnnrescore/$type
-      	fi
+      		fi
 		fi
 	done
 fi
@@ -381,8 +403,8 @@ if [ $stage -le 5 ]; then
 	done
 
 	# combine the ctms and do postprocessing: sort, combine numbers, restore compounds, filter with glm
-	if [ -s $data/ALL/all.glm ]; then	
-		cat $data/ALL/1Best.raw.ctm | sort -k1,1 -k3,3n | local/remove_hyphens.pl | \
+	if [ -s $data/ALL/all.glm ]; then
+			cat $data/ALL/1Best.raw.ctm | sort -k1,1 -k3,3n | local/remove_hyphens.pl | \
 			perl local/combine_numbers.pl | sort -k1,1 -k3,3n | local/compound-restoration.pl | \
 			grep -E --text -v 'uh|<unk>' | csrfilt.sh -s -i ctm -t hyp $data/ALL/all.glm >$data/ALL/1Best.ctm
 	else
@@ -396,6 +418,8 @@ if [ $stage -le 5 ]; then
 	else
 		cp $data/ALL/1Best.ctm $result
 	fi
+	
+	local/ctmseg2sent.pl $result >$result/1Best.txt
 
 	if (( $nbest > 0 )); then
 		cat $data/ALL/NBest.raw.ctm | sort -k1,1 -k3,3n local/remove_hyphens.pl | \

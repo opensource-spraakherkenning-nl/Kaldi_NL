@@ -20,6 +20,11 @@ am_fmllr_bn=dnn8c_fmllr-gmm
 am_nnet_bn=dnn8f_pretrain-dbn_dnn_smbr
 bn_feat=dnn8a_bn-feat
 
+if [ ! -d $KALDI_ROOT ]; then
+	echo "KALDI_ROOT not properly set in path.sh";
+	exit;
+fi
+
 # create symlinks to the scripts
 if [ ! -h steps ]; then
     ln -s $KALDI_ROOT/egs/wsj/s5/steps steps
@@ -29,7 +34,7 @@ if [ ! -h utils ]; then
     ln -s $KALDI_ROOT/egs/wsj/s5/utils utils
 fi
 
-# make sure the models are present
+# download the models if needed
 if [ ! -d $modelpack ]; then
 	mkdir -p $modelpack
 	wget -P $modelpack http://beehub.nl/open-source-spraakherkenning-NL/ModelPack.tar.gz
@@ -68,12 +73,12 @@ for model_sub in BN; do
 			if [ "$model" = "$skipgraph" ]; then continue 2; fi
 		done
 
-		if [ ! -d $model_root/$model_sub/$model/$graph_name ]; then
+		if [ ! -e $model_root/$model_sub/$model/$graph_name/HCLG.fst ]; then
 			echo "Creating graph directory. This may take awhile."
 			utils/mkgraph.sh $lm_small models/$model_sub/$tgtmodel $model_root/$model_sub/$model/$graph_name || exit 1;
 		fi
       
-		# the decode script expect the graph-directory to be named graph_lm_small
+		# the decode script expects the graph-directory to be named graph_lm_small
 		if [ -h $model_root/$model_sub/$model/graph_lm_small ]; then
 			rm $model_root/$model_sub/$model/graph_lm_small
 		fi
