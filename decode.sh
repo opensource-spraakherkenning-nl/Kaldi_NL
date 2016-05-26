@@ -126,6 +126,7 @@ fi
 
 ## These settings should generally be left alone
 result=${!#}
+logging=$result/Intermediate/logging
 inter=$result/Intermediate
 data=$inter/Data
 lmloc=models/LM
@@ -136,6 +137,7 @@ sgmm2_decode=$inter/sgmm2
 sgmm2_mmi_decode=$inter/sgmm2_mmi
 nnet_decode=$inter/nnet
 nnet_bn_decode=$inter/nnet_bn
+nnet2_decode=$inter/nnet2
 rescore=$inter/rescore
 orgrescore=$rescore
 rnnrescore=$inter/rnnrescore
@@ -145,6 +147,8 @@ fmllr_bn_opts="--cmd $cmd --skip-scoring true --num-threads $num_threads --first
 fmmi_opts="--cmd $cmd --skip-scoring true --num-threads $num_threads --acwt $acwt --maxactive $maxactive --beam $beam --lattice-beam $lattice_beam";
 sgmm2_opts="--cmd $cmd --skip-scoring true --num-threads $num_threads --acwt $acwt --max-active $maxactive --beam $beam --lattice-beam $lattice_beam";
 
+timer="$(which time) -o $inter/time.log -f \"%e %U %S %M\""
+
 # determine the output location
 case $modeltype in 
 	fmllr)	resultsloc=$fmllr_decode;;
@@ -153,6 +157,8 @@ case $modeltype in
 			modeltype="sgmm2_mmi";;
 	nnet)		resultsloc=$nnet_decode;;
 	nnet_bn)	resultsloc=$nnet_bn_decode;;
+	nnet2)		resultsloc=$nnet2_decode
+				modeltype="nnet_ms_a";;
 esac
 
 # set up speech types: only split into speech types if different models are used
@@ -211,13 +217,27 @@ if [ $stage -le 1 ]; then
 	eval $findcmd >$data/test.flist
     
 	# prepare data
-	local/flist2scp.pl $data $multichannel							# main data preparation stage, also does diarization
+	eval $timer local/flist2scp.pl $data $multichannel >$logging 2>&1 &						# main data preparation stage, also does diarization
+	pid=$!
+	numfiles=$(cat $data/test.flist | wc -l)
+	while kill -0 $pid 2>/dev/null; do
+		if [ -e $data/ALL/test.uem ]; then
+			numfiles=$(cat $data/ALL/test.uem | wc -l)
+		fi
+		numsegmented=$(ls $data/ALL/liumlog/*.seg 2>/dev/null| wc -l)
+		local/progressbar.sh $numsegmented $numfiles 50 "Diarization" 
+		sleep 1
+	done
+	cat $inter/time.log | awk '{printf( "Diarization completed in %d:%02d:%02d (CPU: %d:%02d:%02d), Memory used: %d MB                \n", int($1/3600), int($1%3600/60), int($1%3600%60), int(($2+$3)/3600), int(($2+$3)%3600/60), int(($2+$3)%3600%60), $4/1000) }'
+			
+	numsegments=$(cat $data/ALL/segments | wc -l)
+	echo "$numfiles source file(s) were split into $numsegments segments                 "
 	cat $data/ALL/utt2spk.tmp | sort -k2,2 -k1,1 -u >$data/ALL/utt2spk
 	rm $data/ALL/utt2spk.tmp $data/foo.wav
-	local/change_segment_names.pl $data								# change names of utterances for sorting purposes
+	local/change_segment_names.pl $data											# change names of utterances for sorting purposes
 	cat $data/*.stm 2>/dev/null | sort -k1,1 -k4,4n >$data/ALL/ref.stm			# combine individual stm's
 	cat $data/*.glm 2>/dev/null >$data/ALL/all.glm								# copy any .glm's	
-	utils/fix_data_dir.sh $data/ALL
+	utils/fix_data_dir.sh $data/ALL >>$logging 2>&1
 	cp -r $data/ALL/liumlog $result
 fi
 
@@ -227,6 +247,7 @@ if [ $stage -le 2 ]; then
 	echo "Feature generation" >$inter/stage
 	## create mfccs for decoding
 	cp conf/mfcc.conf $inter
+	[ $modeltype = "nnet_ms_a" ] && cp conf/mfcc_hires.conf $inter/mfcc.conf
 
 	# determine maximum number of jobs for this task
 	numspeak=$(wc -l $data/ALL/spk2utt | awk '{print $1}')
@@ -240,24 +261,24 @@ if [ $stage -le 2 ]; then
 		test_fb=$data/ALL_orig
 		test_bn=$data/ALL
 		
-		steps/make_fbank_pitch.sh --nj $this_nj $test_fb $test_fb/log $test_fb/data || exit 1;
-  		steps/compute_cmvn_stats.sh $test_fb $test_fb/log $test_fb/data || exit 1;	  
+		steps/make_fbank_pitch.sh --nj $this_nj $test_fb $test_fb/log $test_fb/data >>$logging 2>&1 || exit 1;
+  		steps/compute_cmvn_stats.sh $test_fb $test_fb/log $test_fb/data >>$logging 2>&1 || exit 1;	  
 	  
-		steps/nnet/make_bn_feats.sh --nj $this_nj $test_bn $test_fb $bnfeat $test_bn/log $test_bn/data || exit 1 
-		steps/compute_cmvn_stats.sh $test_bn $test_bn/log $test_bn/data || exit 1
+		steps/nnet/make_bn_feats.sh --nj $this_nj $test_bn $test_fb $bnfeat $test_bn/log $test_bn/data >>$logging 2>&1 || exit 1 
+		steps/compute_cmvn_stats.sh $test_bn $test_bn/log $test_bn/data >>$logging 2>&1 || exit 1
 		
 		# the standard scripts don't copy ref.stm, or test.uem
 		cp $data/ALL_orig/ref.stm $data/ALL_orig/test.uem $data/ALL_orig/all.glm $data/ALL/ 2>/dev/null
 	else
-		steps/make_mfcc.sh --nj $this_nj --mfcc-config $inter/mfcc.conf $data/ALL $data/ALL/log $inter/mfcc || exit 1
-		steps/compute_cmvn_stats.sh $data/ALL $data/ALL/log $inter/mfcc || exit 1
+		steps/make_mfcc.sh --nj $this_nj --mfcc-config $inter/mfcc.conf $data/ALL $data/ALL/log $inter/mfcc >>$logging 2>&1 || exit 1
+		steps/compute_cmvn_stats.sh $data/ALL $data/ALL/log $inter/mfcc >>$logging 2>&1 || exit 1
 	fi
 	
 	## Make separate folders for speech types, if needed
 	if [ "$speech_types" != "ALL" ]; then				     
 		for type in $speech_types; do
 			cat $data/BWGender | grep $type | uniq | awk '{print $2}' >$data/foo
- 			utils/subset_data_dir.sh --utt-list $data/foo $data/ALL $data/$type
+ 			utils/subset_data_dir.sh --utt-list $data/foo $data/ALL $data/$type >>$logging 2>&1
 		done
 		rm $data/foo
 	fi
@@ -274,7 +295,8 @@ if [ $stage -le 3 ]; then
        
 		echo -n "Duration of $type speech: "
 		cat $data/${type}/segments | awk '{s+=$4-$3} END {printf("%.0f", s)}' | local/convert_time.sh
-
+		totallines=$(cat $data/${type}/segments | wc -l)
+		
 		fmllr_models=models/$bw/fmllr
 		if [ $modeltype = "nnet_bn" ]; then 				# for the nnet_bn model, create a first-pass w/ bn features
 			fmllr_models=models/$bw/fmllr_bn				# dnn8c_fmllr-gmm 		 
@@ -283,13 +305,26 @@ if [ $stage -le 3 ]; then
 		fi
 		
 	 	mkdir -p $fmllr_decode $fmllr_decode.si $resultsloc
-		
-		if [ ! -d $fmllr_decode/$type ] || $overwrite; then
+			
+		if [ $modeltype != "nnet_ms_a" ] && [[ ! -d $fmllr_decode/$type || $overwrite ]]; then
 			foo=`mktemp -d -p $fmllr_models` 
 			
 			echo -e "First pass decode\t$type\t$foo" >$inter/stage 
 			# fmllr decoding
-			time steps/decode_fmllr.sh $fmllr_opts --nj $this_nj $fmllr_models/$graph $data/$type $foo 
+			eval $timer steps/decode_fmllr.sh $fmllr_opts --nj $this_nj $fmllr_models/$graph $data/$type $foo >>$logging 2>&1 &
+			pid=$!
+        	while kill -0 $pid 2>/dev/null; do
+				linesdone=$(cat ${foo}/log/decode.*.log 2>/dev/null | grep Log-like | wc -l)
+				pbmessage="First Pass Stage 2/2";				
+				if [ $linesdone -eq 0 ]; then
+					linesdone=$(cat ${foo}.si/log/decode.*.log 2>/dev/null | grep Log-like | wc -l)		
+					pbmessage="First Pass Stage 1/2";				
+				fi
+				local/progressbar.sh $linesdone $totallines 50 "$pbmessage"  			
+  				sleep 2
+			done
+			cat $inter/time.log | awk '{printf( "First Pass  completed in %d:%02d:%02d (CPU: %d:%02d:%02d), Memory used: %d MB                \n", int($1/3600), int($1%3600/60), int($1%3600%60), int(($2+$3)/3600), int(($2+$3)%3600/60), int(($2+$3)%3600%60), $4/1000) }'
+			
             rm -rf $fmllr_decode/$type ${fmllr_decode}.si/$type 
             mv -f $foo $fmllr_decode/$type      # standard scripts place results in subdir of model directory.. 
             mv -f ${foo}.si ${fmllr_decode}.si/$type 
@@ -300,15 +335,17 @@ if [ $stage -le 3 ]; then
 		models=models/$bw/$modeltype
 		
 		# nnet decode supports alternative decode locations, fmmi & sgmm decode do not
-		if [ $modeltype = "fmmi" -o $modeltype = "sgmm2_mmi" ]; then 
-			foo=`mktemp -d -p $models`
+		if [ $modeltype = "fmmi" -o $modeltype = "sgmm2_mmi" -o $modeltype = "nnet_ms_a" ]; then
+        	foo=`mktemp -d -p $models`
+        	fpresults=$foo
 			echo -e "Second pass decode\t$type\t$foo" >$inter/stage 
 		else
+			fpresults=${resultsloc}/$type
 			echo -e "Second pass decode\t$type\t${resultsloc}/$type" >$inter/stage 	
 		fi
 		
 		case $modeltype in 
-			fmmi)    time steps/decode_fmmi.sh $fmmi_opts --nj $this_nj --transform-dir $fmllr_decode/$type $models/$graph $data/$type $foo;; 
+			fmmi)    /usr/bin/time -o $inter/time.log -f "%e %U %S %M" steps/decode_fmmi.sh $fmmi_opts --nj $this_nj --transform-dir $fmllr_decode/$type $models/$graph $data/$type $foo;; 
       		sgmm2_mmi)	p1_models=models/$bw/sgmm2
 						foop1=`mktemp -d -p $p1_models` 
             			rm -rf $sgmm2_decode/$type 
@@ -316,30 +353,53 @@ if [ $stage -le 3 ]; then
             			time steps/decode_sgmm2_rescore.sh --skip-scoring true --transform-dir $fmllr_decode/$type $p1_models/$graph $data/$type $foop1 $foo         
             			mkdir -p $sgmm2_decode                   
                   		mv $foop1 $sgmm2_decode/$type;; 
+            nnet_ms_a)	rm $models/../extractor/.error 2>/dev/null
+            			steps/online/nnet2/extract_ivectors_online.sh --nj $this_nj --max-count 10 $data/$type $models/../extractor $data/$type/ivectors >>$logging 2>&1 || touch $models/../extractor/.error
+            			[ -f $models/../extractor/.error ] && echo "$0: error ectracting iVectors." && exit 1
+            			eval $timer steps/nnet2/decode.sh --nj $this_nj --skip-scoring true --online-ivector-dir $data/$type/ivectors $fmllr_models/$graph $data/$type $foo >>$logging 2>&1 &;; 
             nnet)    	steps/nnet/make_fmllr_feats.sh --nj $this_nj --transform-dir $fmllr_decode/$type $data/$type/data_fmllr $data/$type $fmllr_models $data/$type/log $data/$type/data_fmllr/data     
-              			time steps/nnet/decode.sh --nj $this_nj --srcdir $models --config conf/decode_dnn.config --acwt 0.1 $fmllr_models/$graph $data/$type/data_fmllr $resultsloc/$type;;
-			nnet_bn)	steps/nnet/make_fmllr_feats.sh --nj $this_nj --transform-dir $fmllr_decode/$type $data/$type/data_fmllr_bn $data/$type $fmllr_models $data/$type/log $data/$type/data_fmllr_bn/data
-						time steps/nnet/decode.sh --nj $this_nj --srcdir $models --config conf/decode_dnn.config --acwt 0.1 $fmllr_models/$graph $data/$type/data_fmllr_bn $resultsloc/$type;;       
+              			eval $timer steps/nnet/decode.sh --nj $this_nj --srcdir $models --config conf/decode_dnn.config --acwt 0.1 $fmllr_models/$graph $data/$type/data_fmllr $resultsloc/$type;;
+			nnet_bn)	rm -rf $resultsloc/$type
+						steps/nnet/make_fmllr_feats.sh --nj $this_nj --transform-dir $fmllr_decode/$type $data/$type/data_fmllr_bn $data/$type $fmllr_models $data/$type/log $data/$type/data_fmllr_bn/data  >>$logging 2>&1
+						eval $timer steps/nnet/decode.sh --nj $this_nj --srcdir $models --config conf/decode_dnn.config --acwt 0.1 $fmllr_models/$graph $data/$type/data_fmllr_bn $resultsloc/$type  >>$logging 2>&1 &;;       
         esac 
-        
-        if [ $modeltype = "fmmi" -o $modeltype = "sgmm2_mmi" ]; then
+		        
+        pid=$!
+        while kill -0 $pid 2>/dev/null; do
+			linesdone=$(cat $fpresults/log/decode.*.log 2>/dev/null | grep Log-like | wc -l)
+			local/progressbar.sh $linesdone $totallines 50 "Final Pass"  			
+  			sleep 2
+		done
+        tail -1 $inter/time.log | awk '{printf( "Final Pass  completed in %d:%02d:%02d (CPU: %d:%02d:%02d), Memory used: %d MB                \n", int($1/3600), int($1%3600/60), int($1%3600%60), int(($2+$3)/3600), int(($2+$3)%3600/60), int(($2+$3)%3600%60), $4/1000) }'
+		
+        if [ $modeltype = "fmmi" -o $modeltype = "sgmm2_mmi" -o $modeltype = "nnet_ms_a" ]; then
         	rm -rf $resultsloc/$type    
        		mv -f $foo $resultsloc/$type
        	fi   
 	done
 fi
 
-## rescore with 4-gram language model and optionally RNN LM.
+## rescore with 4-gram language model and optionally RNN LM.]; the
 if [ $stage -le 4 ]; then
 	for type in $speech_types; do
 		if $dorescore; then		
 			echo -e "Rescoring\t$type" >$inter/stage            
-      	if [ ! -e $resultsloc/$type/num_jobs ]; then
-         	continue
-         fi
-         numjobs=$(< $resultsloc/$type/num_jobs)
-	     		# largeLM rescoring
-     		time steps/lmrescore_const_arpa.sh --skip-scoring true $lmloc/$smallLM $lmloc/$largeLM $data/$type $resultsloc/$type $rescore/$type           
+      		if [ ! -e $resultsloc/$type/num_jobs ]; then
+         		continue
+         	fi
+         	numjobs=$(< $resultsloc/$type/num_jobs)
+	     	# largeLM rescoring
+     		eval $timer steps/lmrescore_const_arpa.sh --skip-scoring true $lmloc/$smallLM $lmloc/$largeLM $data/$type $resultsloc/$type $rescore/$type >>$logging 2>&1 &           
+			pid=$!
+			spin='-\|/'
+			i=0
+        	while kill -0 $pid 2>/dev/null; do
+				i=$(( (i+1) %4 ))
+  				printf "\rRescoring.. ${spin:$i:1}"
+  				sleep .2
+			done
+        	cat $inter/time.log | awk '{printf("\rRescoring   completed in %d:%02d:%02d (CPU: %d:%02d:%02d), Memory used: %d MB                \n", int($1/3600), int($1%3600/60), int($1%3600%60), int(($2+$3)/3600), int(($2+$3)%3600/60), int(($2+$3)%3600%60), $4/1000) }'
+		     		
      		if $rnn; then
 				time steps/rnnlmrescore.sh --cmd $cmd --skip-scoring true --rnnlm-ver faster-rnnlm/faster-rnnlm --N $rnnnbest --inv-acwt $inv_acoustic_scale $rnnweight $lmloc/$largeLM $rnnLM $data/$type $rescore/$type $rnnrescore/$type
       		fi
@@ -406,11 +466,11 @@ if [ $stage -le 5 ]; then
 	# combine the ctms and do postprocessing: sort, combine numbers, restore compounds, filter with glm
 	if [ -s $data/ALL/all.glm ]; then
 			cat $data/ALL/1Best.raw.ctm | sort -k1,1 -k3,3n | local/remove_hyphens.pl | \
-			perl local/combine_numbers.pl | sort -k1,1 -k3,3n | local/compound-restoration.pl | \
+			perl local/combine_numbers.pl | sort -k1,1 -k3,3n | local/compound-restoration.pl 2>>$logging | \
 			grep -E --text -v 'uh|<unk>' | csrfilt.sh -s -i ctm -t hyp $data/ALL/all.glm >$data/ALL/1Best.ctm
 	else
 		cat $data/ALL/1Best.raw.ctm | sort -k1,1 -k3,3n | local/remove_hyphens.pl | \
-			perl local/combine_numbers.pl | sort -k1,1 -k3,3n | local/compound-restoration.pl | \
+			perl local/combine_numbers.pl | sort -k1,1 -k3,3n | local/compound-restoration.pl 2>>$logging | \
 			grep -E --text -v 'uh|<unk>' >$data/ALL/1Best.ctm
 	fi
 	
@@ -435,9 +495,10 @@ if [ $stage -le 6 ]; then
 	if [ -s $data/ALL/ref.stm ]; then
 		# score using asclite, then produce alignments and reports using sclite
 		if [ -e $data/ALL/test.uem ]; then uem="-uem $data/ALL/test.uem"; fi
-		asclite -D -noisg -r $data/ALL/ref.stm stm -h $result/1Best.ctm ctm $uem -o sgml
-		cat $result/1Best.ctm.sgml | sclite -P -o sum -o pralign -o dtl -n $result/1Best.ctm
+		asclite -D -noisg -r $data/ALL/ref.stm stm -h $result/1Best.ctm ctm $uem -o sgml >>$logging 2>&1 
+		cat $result/1Best.ctm.sgml | sclite -P -o sum -o pralign -o dtl -n $result/1Best.ctm  >>$logging 2>&1
   	fi
 fi
 
 echo -e "Done\t$type" >$inter/stage
+echo "Done"
