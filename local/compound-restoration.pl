@@ -31,9 +31,9 @@ my $dir = getcwd;
 
 my $mapping = "$dir/local/compounds-release.lst";
 
-my %compound  = ();
+my %compound = ();
 
-open(COMPOUND    , "< $mapping");
+open(COMPOUND, "<$mapping") || die "Compound mapping file not found";
 while(<COMPOUND>)
 {
   chomp;

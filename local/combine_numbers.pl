@@ -1,4 +1,4 @@
-#!/opt/local/bin/perl
+#!/usr/bin/env perl
 
 ## combine numbers in ctm files accordig to `onze taal' rules.
 ## http://www.onzetaal.nl/advies/getallen.php
