@@ -91,6 +91,7 @@ singlespeaker=false             # by default assume multiple speakers in input, 
 dorescore=true                  # rescore with largeLM as default
 copyall=false							# copy all source files (true) or use symlinks (false)
 overwrite=true					# overwrite the 1st pass output if already present
+splittext=true
 
 # language models used for rescoring. smallLM must match with the graph of acoustic+language model
 # largeLM must be a 'const arpa' LM
@@ -121,6 +122,7 @@ if [ $# -lt 2 ]; then
     echo "  --cts <true/false>                       # use cts models for telephone speech, default is false."
     echo "  --file-types <extensions>                # include audio files with the given extensions, default \"wav mp3\" "
     echo "  --copyall <true/false>                   # copy all source files or use symlinks, default is false (use symlinks)"
+    echo "  --splittext <true/false>                 # split resulting 1Best.txt into separate .txt files for each input file, default $splittext"
     exit 1;
 fi
 
@@ -480,7 +482,7 @@ if [ $stage -le 5 ]; then
 		cp $data/ALL/1Best.ctm $result
 	fi
 	
-	local/ctmseg2sent.pl $result >$result/1Best.txt
+	local/ctmseg2sent.pl $result $splittext >$result/1Best.txt
 
 	if (( $nbest > 0 )); then
 		cat $data/ALL/NBest.raw.ctm | sort -k1,1 -k3,3n local/remove_hyphens.pl | \

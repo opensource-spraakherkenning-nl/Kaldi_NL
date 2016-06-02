@@ -3,6 +3,8 @@
 open(CTM, "$ARGV[0]/1Best.ctm");
 open(SEG, "$ARGV[0]/Intermediate/Data/ALL/segments");
 
+if ($ARGV[1] eq 'true') {$splitfiles=1;}
+
 if (-e "$ARGV[0]/Intermediate/Data/ALL/segconv") {
 	open(CONV, "$ARGV[0]/Intermediate/Data/ALL/segconv");
 } else {
@@ -48,9 +50,13 @@ while(<CTM>) {
 
 # output the transcriptions
 foreach $name (sort keys %filenames) {
+	if ($splitfiles) {open(OUT, '>>', "$ARGV[0]/$name.txt");}
 	foreach $segname (sort {$starttime{$a}<=>$starttime{$b}} keys %starttime) {
 		if ($name eq $filename{$segname}) {		
 			print $transcription{$segname}.'('.$segname." ".$starttime{$segname}.")\n";
+			if ($splitfiles) {
+				print OUT $transcription{$segname}.'('.$segname." ".$starttime{$segname}.")\n";
+			}
 		}
 	}
 }
