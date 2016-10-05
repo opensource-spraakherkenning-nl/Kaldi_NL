@@ -13,4 +13,6 @@ progressbar() {
     fi
 };
 
-progressbar "$1" "$2" "$3" "$4"
+if [ $2 -gt 0 ] && [ $2 -ge $1 ]; then
+	progressbar "$1" "$2" "$3" "$4"
+fi

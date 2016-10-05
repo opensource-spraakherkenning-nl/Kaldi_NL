@@ -1,26 +1,14 @@
 #!/usr/bin/perl
 
-open(CTM, "$ARGV[0]/1Best.ctm");
-open(SEG, "$ARGV[0]/Intermediate/Data/ALL/segments");
-
-if ($ARGV[1] eq 'true') {$splitfiles=1;}
-
-if (-e "$ARGV[0]/Intermediate/Data/ALL/segconv") {
-	open(CONV, "$ARGV[0]/Intermediate/Data/ALL/segconv");
-} else {
-	open(CONV, "$ARGV[0]/Intermediate/Data/ALL_orig/segconv") || die "segconvert not found";
-}
-
-while(<CONV>) {
-	chop;
-	($testseg, $name)=split;
-	$convert{$testseg}=$name;
-}
+$ident=$ARGV[2];
+open(CTM, "$ARGV[0]/1Best.".$ident."ctm");
+open(SEG, "$ARGV[0]/intermediate/data/ALL/segments");
+open(TXT, ">$ARGV[0]/1Best.".$ident."txt");
+$splittext=$ARGV[1];
 
 while(<SEG>) {
 	chop;
-	($testseg, $name, $start, $end)=split;
-	$segname=$convert{$testseg};
+	($segname, $name, $start, $end)=split;
 	$starttime{$segname}=$start;
 	$endtime{$segname}=$end;
 	$filename{$segname}=$name;
@@ -50,12 +38,12 @@ while(<CTM>) {
 
 # output the transcriptions
 foreach $name (sort keys %filenames) {
-	if ($splitfiles) {open(OUT, '>>', "$ARGV[0]/$name.txt");}
-	foreach $segname (sort {$starttime{$a}<=>$starttime{$b}} keys %starttime) {
+	if ($splittext) {open(OUT, ">$ARGV[0]/$name.".$ident."txt");}
+	foreach $segname (sort {$starttime{$a}<=>$starttime{$b}} keys %transcription) {
 		if ($name eq $filename{$segname}) {		
-			print $transcription{$segname}.'('.$segname." ".$starttime{$segname}.")\n";
-			if ($splitfiles) {
-				print OUT $transcription{$segname}.'('.$segname." ".$starttime{$segname}.")\n";
+			print TXT ucfirst(substr($transcription{$segname},0,-1).'. ('.$segname." ".$starttime{$segname}.")\n");
+			if ($splittext) {
+				print OUT ucfirst(substr($transcription{$segname},0,-1).'. ('.$segname." ".$starttime{$segname}.")\n");
 			}
 		}
 	}
