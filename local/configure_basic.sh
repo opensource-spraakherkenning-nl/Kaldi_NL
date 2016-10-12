@@ -14,7 +14,12 @@ done
 if [ ! $return_value -eq 0 ]; then
 	echo "KALDI_ROOT not set. Cancelling"
 	exit 1
+else 
+	mv path.sh foo
+	cat foo | sed "s%KALDI_ROOT=.*$%KALDI_ROOT=$kaldiroot%" >path.sh
+	rm foo
 fi
+
 
 #
 # get models (temporary process, a separate script for retrieving and updating models is forthcoming)
