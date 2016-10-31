@@ -1,6 +1,6 @@
 #!/bin/bash
 
-[ $(which dialog) ] || exit
+[ $(which dialog) ] || { echo 'Please install "dialog" to use this configurator.' >&2; exit; };
 
 local/configure_basic.sh && \
 local/configure_download.sh && \
