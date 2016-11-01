@@ -234,7 +234,9 @@ chmod +x decode.sh
 
 ## 
 ## Fix ivector_extractor.conf, this only needs to be done once
+## due to this being a bit error-prone it is done every time.
 ##
+rm -f ${model}/conf/.fixed
 
 if [ -e ${model}/conf/ivector_extractor.conf ] && [ ! -e ${model}/conf/.fixed ]; then
 	modeldir=$(realpath $model)
