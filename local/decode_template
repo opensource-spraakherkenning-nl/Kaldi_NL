@@ -47,7 +47,7 @@
 set -a 
 
 cmd=run.pl
-nj=8                    # maximum number of simultaneous jobs used for feature generation and decoding
+nj=4                    # maximum number of simultaneous jobs used for feature generation and decoding
 stage=1
 numthreads=1           # used for decoding
 
