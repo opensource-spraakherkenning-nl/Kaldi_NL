@@ -41,6 +41,7 @@ myRadioDialog () {
 		[ ! $auto_latest -eq 1 ] && [[ $mem == latest* ]] && continue
 		list="${list}$i $mem off " && ((i++))
 	done
+	[ $i -lt 2 ] && echo "Something went wrong with $1, $2 : empty list" && exit 1
 
 	# select current option
 	[ $4 ] && list=$(echo $list | sed "s%$4 off%$4 on%")
@@ -90,14 +91,11 @@ lexicons=$(ls -1 models/$lang/*/*/Lexicon/*.lex)
 for lexicon in $lexicons; do
 	cat $lexicon | awk -F'\t' '{print $NF}' | sed 's/ /\n/g' | sort | uniq >phones
 	phoneprobs=$(comm -13 mphones phones)
-	if [ "$phoneprobs" == "" ]; then
-		size=$(( $(cat $lexicon | wc -l) / 1000 ))
-		echo "${lexicon}(${size}k)" >>lexicons
-	fi
-	rm -f phones mphones 
+	[ "$phoneprobs" == "" ] && size=$(( $(cat $lexicon | wc -l) / 1000 )) && echo "${lexicon}(${size}k)" >>lexicons
 done
+rm -f phones mphones
 
-[ -e decode.sh ] && curlex=$(cat decode.sh | grep "^lexicon=" | awk -F'=' '{print $2}' | sed "s%\'%%")
+[ -e decode.sh ] && curlex=$(cat decode.sh | grep "^lexicon=" | awk -F'=' '{print $2}' | sed -r "s%'(.*)'%\1%")
 lexicons=$(cat lexicons)
 myRadioDialog "Model Selection" "Choose Lexicon:" "$lexicons" "$curlex"
 lexiconlit=$returnval
@@ -124,6 +122,7 @@ lmodel="models/$lmodel"
 [ -e decode.sh ] && curllmodel=$(cat decode.sh | grep "^llmodel=" | awk -F'=' '{print $2}' | cut -d'/' -f2-6)
 llmodels=$(ls -1 models/$lang/*/*/LM/*/*/*.arpa.gz | cut -d'/' -f1-6 | cut -d'/' -f2-6 | uniq)
 llmodels="None $llmodels"
+[ -z "$curllmodel" ] && curllmodel="None"
 myRadioDialog "Model Selection" "Choose Rescore (Large) Language Model:" "$llmodels" "$curllmodel"
 llmodel="models/${returnval}"
 if [ "$llmodel" == "models/None" ]; then
@@ -154,11 +153,7 @@ graphpath="${graphloc}/graph_${graphpath}_${LGpath}"
 [ ! -d $lmodelpath/LG_${LGpath} ] || [ ! -d ${graphpath} ] && graphwarnstr="\nWARNING: for this configuration a decode graph needs to be created. For large language models, this may take a while.\n\n"
 
 dialog --stdout --yesno "Confirm your choices:\n\nAcoustic Model:\n${model}\n\nLexicon:\n${lexiconlit}\n\n${extractstr}Language Model:\n${lmodel}\n\n${llmodelstr}\n${graphwarnstr}" 0 0
-return_value=$?
-if [ ! $return_value -eq 0 ]; then
-	echo "Cancelled"
-	exit
-fi
+[ ! $? -eq 0 ] && echo "Cancelled" && exit
 
 ##
 ## Generate graphs
@@ -229,18 +224,13 @@ cat ${model}/*.info | \
 
 cat local/decode_template | sed -n '/^\*\*\*\* INSERT DECODE \*\*\*\*/{:a;n;/^\*\*\*\* INSERT RESCORE \*\*\*\*/b;p;ba}' >>decode.sh
 
-# sed -r "s%^(eval .*)$%\1 >>\$logging 2>\&1 &\\n${progress}%" | \
-	
-# cat ${model}/*.info | sed -n '/\[Decode\]/{:a;n;/^\[/b;p;ba}'
 chmod +x decode.sh
 
 ## 
-## Fix ivector_extractor.conf, this only needs to be done once
-## due to this being a bit error-prone it is done every time.
+## Fix ivector_extractor.conf
 ##
-rm -f ${model}/conf/.fixed
 
-if [ -e ${model}/conf/ivector_extractor.conf ] && [ ! -e ${model}/conf/.fixed ]; then
+if [ -e ${model}/conf/ivector_extractor.conf ]; then
 	modeldir=$(realpath $model)
 	mv ${model}/conf/ivector_extractor.conf ${model}/conf/ivector_extractor.conf.orig
 	cat ${model}/conf/ivector_extractor.conf.orig | \
@@ -250,19 +240,15 @@ if [ -e ${model}/conf/ivector_extractor.conf ] && [ ! -e ${model}/conf/.fixed ];
 		sed "s%--global-cmvn-stats.*%--global-cmvn-stats=${modeldir}/ivector_extractor/global_cmvn.stats%" | \
 		sed "s%--diag-ubm.*%--diag-ubm=${modeldir}/ivector_extractor/final.dubm%" | \
 		sed "s%--ivector-extractor.*%--ivector-extractor=${modeldir}/ivector_extractor/final.ie%" >${model}/conf/ivector_extractor.conf
-	if [ -e ${model}/conf/online_nnet2_decoding.conf ]; then 
-		mv ${model}/conf/online_nnet2_decoding.conf ${model}/conf/online_nnet2_decoding.conf.orig
+	[ -e ${model}/conf/online_nnet2_decoding.conf ] && \ 
+		mv ${model}/conf/online_nnet2_decoding.conf ${model}/conf/online_nnet2_decoding.conf.orig && \
 		cp ${model}/conf/online_nnet2_decoding.conf.orig ${model}/conf/online.conf.orig
-	fi
-	[ -e ${model}/conf/online.conf ] && mv ${model}/conf/online.conf ${model}/conf/online.conf.orig
 	
+	[ -e ${model}/conf/online.conf ] && mv ${model}/conf/online.conf ${model}/conf/online.conf.orig	
 	cat ${model}/conf/online.conf.orig | \
 		sed "s%--mfcc-config.*%--mfcc-config=${modeldir}/conf/mfcc.conf%" | \
 		sed "s%--ivector-extraction-config.*%--ivector-extraction-config=${modeldir}/conf/ivector_extractor.conf%" >${model}/conf/online.conf
-	
 	[ -e ${model}/conf/online_nnet2_decoding.conf.orig ] && mv ${model}/conf/online.conf ${model}/conf/online_nnet2_decoding.conf
-				
-	touch ${model}/conf/.fixed
 fi
 
 dialog --backtitle "Done" --infobox "Done" 3 30

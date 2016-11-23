@@ -206,7 +206,7 @@ fi
 if [ $stage -le 13 ] && [ -s $data/ALL/ref.stm ]; then
 	echo -e "Scoring" >$inter/stage
 	# score using asclite, then produce alignments and reports using sclite
-	[ -e $data/ALL/test.uem ] && uem="-uem $data/ALL/test.uem"
+	[ -s $data/ALL/test.uem ] && uem="-uem $data/ALL/test.uem"
 	for iac in $inv_acoustic_scale; do
 		for wip in $word_ins_penalty; do
 			ident=

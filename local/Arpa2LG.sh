@@ -36,7 +36,7 @@ cat $dictdir/lexiconp.txt | awk -F'\t' '{print $3}' | sed 's/ /\n/g' | sort | un
 touch $dictdir/extra_questions.txt
 
 # create L.fst
-utils/prepare_lang.sh $dictdir "<unk>" $langtmp $langdir || exit 1;
+utils/prepare_lang.sh --phone-symbol-table $outdir/phones.txt $dictdir "<unk>" $langtmp $langdir || exit 1;
 
 # create G.fst
 utils/format_lm.sh $langdir $arpalm $dict $outdir
