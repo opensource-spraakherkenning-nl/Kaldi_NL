@@ -165,6 +165,8 @@ fi
 ##
 if [ ! -d $lmodelpath/LG_${LGpath} ]; then 
 	dialog --backtitle "Graph Generation" --infobox "Creating Decode Graph, This May Take A While \n\nCreating LG" 8 30
+	mkdir $lmodelpath/LG_${LGpath}	
+	cp $model/../../../phones.txt $lmodelpath/LG_${LGpath}/
 	local/Arpa2LG.sh $lmodel $lexicon $lmodelpath/LG_${LGpath} >>configure.log 2>&1
 fi
 if [ ! -d ${graphpath} ]; then
