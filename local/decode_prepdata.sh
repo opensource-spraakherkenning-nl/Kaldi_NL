@@ -21,7 +21,8 @@ while [[ $# > 1 ]] ; do
 			if $copyall; then			
 				cp $i $data/
 			else
-				ln -s -f $i $data
+				fn=$(readlink -f $i)
+				ln -s -f $fn $data
 			fi
 		elif [[ $filetype =~ .*text.* ]]; then
 			echo "Argument $i is a text file, using it as list of files to copy"
