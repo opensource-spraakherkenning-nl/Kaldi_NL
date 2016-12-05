@@ -46,6 +46,16 @@ messages=
 [ "$messages" ] && dialog --stdout --title "Warnings" --msgbox "Some problems were found:\n${messages}" 0 0
 
 #
+# Hints:
+# On Fedora/Ubuntu install Sox normally ('yum install sox'/'apt install sox')
+# To get mp3 support on Fedora:
+#  yum install --nogpgcheck http://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-stable.noarch.rpm http://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-stable.noarch.rpm
+#  yum install --nogpgcheck sox-plugins-freeworld
+# To get mp3 support on Ubuntu:
+#  apt install libsox-fmt-mp3
+#
+
+#
 # create symlinks to the scripts
 #
 ln -s -f $kaldiroot/egs/wsj/s5/steps steps
