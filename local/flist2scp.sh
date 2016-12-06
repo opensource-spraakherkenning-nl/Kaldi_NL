@@ -12,8 +12,8 @@ lines=()
 basefiles=()
 
 # take care of uem and stm files if present
-cat $1/*.glm 2>&1 >$1/ALL/all.glm
-cat $1/*.uem 2>&1 | sort >$1/ALL/test.uem
+[ -e $1/*.glm ] && cat $1/*.glm 2>&1 >$1/ALL/all.glm
+[ -e $1/*.uem ] && cat $1/*.uem 2>&1 | sort >$1/ALL/test.uem
 [ -s $1/ALL/test.uem ] && uemopt="--uem $1/ALL/test.uem"
 cat $1/*.stm 2>&1 >$1/ALL/ref.stm
 
