@@ -79,8 +79,7 @@ cat $model/../../phones.txt | awk -F'[_ ]' '{print $1}' | sort | uniq >mphones
 [ -e decode.sh ] && curversion=$(cat decode.sh | grep "^model=$model" | awk -F'=' '{print $2}' | rev | cut -d'/' -f1 | rev)
 versions=$(ls -1 -d ${model}/*/ | rev | cut -d'/' -f2 | rev)
 myRadioDialog "Model Selection" "Choose AM Version:" "$versions" "$curversion"
-model=$(realpath --relative-to=models $model/$returnval)
-model="models/$model"
+model=$model/$returnval
 
 ##
 ## Select Lexicon
@@ -113,8 +112,7 @@ lmodel="models/${returnval}"
 [ -e decode.sh ] && curlversion=$(cat decode.sh | grep "^lmodel=$lmodel" | awk -F'=' '{print $2}' | rev | cut -d'/' -f1-2 | rev)
 lversions=$(ls -1 $lmodel/*/*.arpa.gz | rev | cut -d'/' -f1-2 | rev | uniq)
 myRadioDialog "Model Selection" "Choose LM Version:" "$lversions" "$curlversion"
-lmodel=$(realpath --relative-to=models $lmodel/$returnval)
-lmodel="models/$lmodel"
+lmodel=$lmodel/$returnval
 
 ##
 ## Select Rescore Language Model
@@ -131,8 +129,7 @@ else
 	[ -e decode.sh ] && curllversion=$(cat decode.sh | grep "^llmodel=$llmodel" | awk -F'=' '{print $2}' | rev | cut -d'/' -f1-2 | rev)
 	llversions=$(ls -1 $llmodel/*/*.arpa.gz | rev | cut -d'/' -f1-2 | rev | uniq)
 	myRadioDialog "Model Selection" "Choose Rescore LM Version:" "$llversions" "$curllversion"
-	llmodel=$(realpath --relative-to=models $llmodel/$returnval)
-	llmodel="models/$llmodel"
+	llmodel=$llmodel/$returnval
 fi
 extractstr=
 [ $extractor ] && extractstr="Extractor:\n${extractor}\n\n"
