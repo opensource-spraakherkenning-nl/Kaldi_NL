@@ -19,7 +19,8 @@ less than 8GB of memory will probably not be able to compile the graphs or provi
 make sure the number of jobs does not crush your machine (use the --nj parameter).
 
 In the starterpack of Dutch models, the best current performance can be expected when using:
-AM: NL/UTwente/HMI/AM/CGN_large/nnet3_online/tdnn_cleaned
+AM: NL/UTwente/HMI/AM/CGN_all/nnet3_online/tdnn
+(slightly better, but much slower: NL/UTwente/HMI/AM/CGN_all/nnet3/tdnn_lstm)
 LM: v1.0/KrantenTT.3gpr.kn.int.arpa.gz
 Rescore LM: NL/UTwente/HMI/LM/KrantenTT & v1.0/KrantenTT.4gpr.kn.int.arpa.gz
 
