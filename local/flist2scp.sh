@@ -16,6 +16,7 @@ basefiles=()
 [ -e $1/*.uem ] && cat $1/*.uem 2>&1 | sort >$1/ALL/test.uem
 [ -s $1/ALL/test.uem ] && uemopt="--uem $1/ALL/test.uem"
 cat $1/*.stm 2>&1 >$1/ALL/ref.stm
+[ -e $1/ALL/all.glm ] && cat $1/*.stm | csrfilt.sh -s -i stm -t ref $1/ALL/all.glm >$1/ALL/ref.stm
 
 >$1/ALL/wav.scp
 >$1/ALL/segments

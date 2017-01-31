@@ -30,9 +30,14 @@ if [ ! -d models/NL ]; then
 	rm -rf models
 	ln -s -f $modelpack/Models models
 fi
-
 [ ! -d models/NL ] && echo "Something went wrong: models were not installed." && exit 1
 
+if [ ! -e models/Patch1 ]; then
+	modelpack=$(readlink -f models)/..
+	[ ! -e $modelpack/Models_Patch1.tar.gz ] && wget -P $modelpack http://beehub.nl/open-source-spraakherkenning-NL/Models_Patch1.tar.gz
+	tar -xvzf $modelpack/Models_Patch1.tar.gz -C $modelpack
+fi
+	
 
 #
 # check for presence of java and available memory

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 [ $(which dialog) ] || { echo 'Please install "dialog" to use this configurator.' >&2; exit; };
-[ $(which realpath) ] || { echo 'Please install "realpath" to use this configurator.' >&2; exit; };
+# [ $(which realpath) ] || { echo 'Please install "realpath" to use this configurator.' >&2; exit; };
 
 local/configure_basic.sh && \
 local/configure_download.sh && \
