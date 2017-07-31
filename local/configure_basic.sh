@@ -19,7 +19,7 @@ sed -i "s%KALDI_ROOT=.*$%KALDI_ROOT=$kaldiroot%" path.sh
 #
 
 if [ ! -d models/NL ]; then
-	while [ $return_value -eq 0 ] && ! realpath $modelpack; do
+	while [ $return_value -eq 0 ] && ! readlink -f $modelpack; do
 		modelpack=$(dialog --stdout --title "Models not found" --inputbox "Enter location to download & store models, do not use ~ " 0 0 "$modelpack")
 		return_value=$?	
 	done	
