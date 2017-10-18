@@ -139,6 +139,7 @@ if [ $stage -le 7 ]; then
 	totallines=$(cat $data/ALL/segments | wc -l)
 	rm -r -f ${inter}/decode
 **** INSERT DECODE ****
+	mv $inter/time.log $inter/time.decode.log
 fi
 
 ## rescore
@@ -156,6 +157,7 @@ if [ $stage -le 9 ] && [ $llmodel ] && [ -e $inter/decode/num_jobs ]; then
 	done
 	cat $inter/time.log | awk '{printf("\rRescoring completed in %d:%02d:%02d (CPU: %d:%02d:%02d), Memory used: %d MB                \n", int($1/3600), int($1%3600/60), int($1%3600%60), int(($2+$3)/3600), int(($2+$3)%3600/60), int(($2+$3)%3600%60), $4/1000) }'
 	rescore=$inter/rescore
+	mv $inter/time.log $inter/time.rescore.log
 fi
 
 [ $llmodel ] && rescore=$inter/rescore
