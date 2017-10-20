@@ -41,8 +41,8 @@ $cmd --max-jobs-run $nj JOB=1:$numjobs $1/ALL/liumlog/segmentation.JOB.log \
 	echo \$line \>\>$1/ALL/liumlog/done.log
     
 for basefile in "${basefiles[@]}"; do
-	cat $1/ALL/liumlog/$basefile.seg | grep -v ";;" | awk '{s++; printf "%s.%03d %s %.3f %.3f\n", $1, s, $1, $3/100, ($3+$4)/100}' >>$1/ALL/segments	
-	cat $1/ALL/liumlog/$basefile.seg | grep -v ";;" | awk '{s++; printf "%s.%03d %s-%s\n", $1, s, $1, $NF}' >>$1/ALL/utt2spk.tmp
+	cat $1/ALL/liumlog/$basefile.seg | grep -v ";;" | awk '{s++; printf "%s.%05d %s %.3f %.3f\n", $1, s, $1, $3/100, ($3+$4)/100}' >>$1/ALL/segments	
+	cat $1/ALL/liumlog/$basefile.seg | grep -v ";;" | awk '{s++; printf "%s.%05d %s-%s\n", $1, s, $1, $NF}' >>$1/ALL/utt2spk.tmp
 done
 
 cat $1/ALL/utt2spk.tmp | sort -k2,2 -k1,1 -u >$1/ALL/utt2spk
