@@ -25,7 +25,7 @@ if [ ! -d models/NL ]; then
 	done	
 	[ ! $return_value -eq 0 ] && echo "Models not downloaded. Cancelling" && exit 1
 	mkdir -p $modelpack
-	[ ! -e $modelpack/Models_Starterpack.tar.gz ] && wget -P $modelpack http://beehub.nl/open-source-spraakherkenning-NL/Models_Starterpack.tar.gz
+	[ ! -e $modelpack/Models_Starterpack.tar.gz ] && wget -P $modelpack http://nlspraak.ewi.utwente.nl/open-source-spraakherkenning-NL/Models_Starterpack.tar.gz
 	tar -xvzf $modelpack/Models_Starterpack.tar.gz -C $modelpack
 	rm -rf models
 	ln -s -f $modelpack/Models models
@@ -34,7 +34,7 @@ fi
 
 if [ ! -e models/Patch1 ]; then
 	modelpack=$(readlink -f models)/..
-	[ ! -e $modelpack/Models_Patch1.tar.gz ] && wget -P $modelpack http://beehub.nl/open-source-spraakherkenning-NL/Models_Patch1.tar.gz
+	[ ! -e $modelpack/Models_Patch1.tar.gz ] && wget -P $modelpack http://nlspraak.ewi.utwente.nl/open-source-spraakherkenning-NL/Models_Patch1.tar.gz
 	tar -xvzf $modelpack/Models_Patch1.tar.gz -C $modelpack
 fi
 	
