@@ -32,7 +32,7 @@ done <$1/test.flist
 
 # Do diarization.   
 # If needed, make a temporary wav file for each input file, as this is what the diarization requires
-numjobs="${#lines[@]-1}"
+numjobs="${#lines[@]}"
 $cmd --max-jobs-run $nj JOB=1:$numjobs $1/ALL/liumlog/segmentation.JOB.log \
     lines=\( ${lines[@]} \)\; basefiles=\( ${basefiles[@]} \)\; idx=JOB\; line=\${lines[\$idx-1]}\; basefile=\${basefiles[\$idx-1]}\; \
     { [ ! \${line##*.} == \'wav\' ] \&\& sox \$line -t wav $1/\${basefile}.wav \; } \; \
