@@ -14,7 +14,7 @@ else
     kaldiroot=$KALDI_ROOT
 fi
 return_value=0
-if [ ! -z "$LM_PREFIX" ]; then
+if [ ! -z "$LM_PREFIX" ]; then #if we run inside LaMachine, then we simply set the model pack relative to the LaMachine prefix (so we need no manual intervention)
     modelpack=$LM_PREFIX/opt/kaldi_nl
 else
     modelpack=
@@ -30,29 +30,28 @@ sed -i "s%KALDI_ROOT=.*$%KALDI_ROOT=$kaldiroot%" path.sh
 #
 # get models (temporary process, a separate script for retrieving and updating models is forthcoming)
 #
+if [ ! -d models/NL ] && [ -z "$modelpack" ]; then
+    while [ $return_value -eq 0 ] && ! readlink -f $modelpack; do
+        modelpack=$(dialog --stdout --title "Models not found" --inputbox "Enter location to download & store models, do not use ~ " 0 0 "$modelpack")
+        return_value=$?
+    done
+    [ ! $return_value -eq 0 ] && fatalerror "Models not downloaded. Cancelling"
+fi
+mkdir -p $modelpack || fatalerror "Model base directory $modelpack does not exist and unable to create"
+if [ ! -e models ]; then
+    ln -s -f $modelpack/Models models
+fi
 
 if [ ! -d models/NL ]; then
-    if [ -z "$modelpack" ]; then
-        while [ $return_value -eq 0 ] && ! readlink -f $modelpack; do
-            modelpack=$(dialog --stdout --title "Models not found" --inputbox "Enter location to download & store models, do not use ~ " 0 0 "$modelpack")
-            return_value=$?
-        done
-    fi
-	[ ! $return_value -eq 0 ] && fatalerror "Models not downloaded. Cancelling"
-	mkdir -p $modelpack
     if [ ! -e $modelpack/Models_Starterpack.tar.gz ]; then
         wget -P $modelpack https://nlspraak.ewi.utwente.nl/open-source-spraakherkenning-NL/Models_Starterpack.tar.gz || fatalerror "Unable to download models from nlspraak.ewi.utwente.nl!"
     fi
 	tar -xvzf $modelpack/Models_Starterpack.tar.gz -C $modelpack || fatalerror "Failure during extraction of models"
-    if [ ! -e models ]; then
-        ln -s -f $modelpack/Models models
-    fi
     rm $modelpack/Models_Starterpack.tar.gz
 fi
 [ ! -d models/NL ] && fatalerror "Something went wrong: models were not installed."
 
 if [ ! -e models/Patch1 ]; then
-	modelpack=$(readlink -f models)/..
 	if [ ! -e $modelpack/Models_Patch1.tar.gz ]; then
         wget -P $modelpack https://nlspraak.ewi.utwente.nl/open-source-spraakherkenning-NL/Models_Patch1.tar.gz || fatalerror "Unable to download Patch1 model from nlspraak.ewi.utwente.nl!"
     fi
@@ -62,7 +61,6 @@ if [ ! -e models/Patch1 ]; then
 fi
 
 if [ ! -e models/Lang_OH ]; then
-	modelpack=$(readlink -f models)/..
 	if [ ! -e $modelpack/oral_history_models.tar.gz ]; then
         wget -P $modelpack https://applejack.science.ru.nl/downloads/oral_history_models.tar.gz || fatalerror "Unable to download oral history models from applejack.science.ru.nl!"
     fi
@@ -106,4 +104,8 @@ messages=
 #
 ln -s -f $kaldiroot/egs/wsj/s5/steps steps
 ln -s -f $kaldiroot/egs/wsj/s5/utils utils
+
+#set permissive permissions
+chmod -R a+r .
+
 
