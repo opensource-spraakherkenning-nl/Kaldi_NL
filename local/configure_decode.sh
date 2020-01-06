@@ -214,7 +214,7 @@ cat ${model}/*.info | \
 	sed "s%\[graph\]%$graphpath%g" | \
 	sed "s%\[models\]%$model%g" | \
 	sed 's%\[extractor\]%$extractor%g' | \
-	sed 's/--nj/--nj $this_nj/' | \
+	sed 's/--nj/--nj $this_nj --beam $beam/' | \
 	sed -r 's%\[out\]%${inter}/decode%' | \
 	sed -r 's/^(\W*steps\/.*)$/\1 >>$logging 2>\&1/' | \
 	sed -r 's/^(\W*eval \$timer steps\/.*)$/\1 >>$logging 2>\&1 \&/' >>decode.sh

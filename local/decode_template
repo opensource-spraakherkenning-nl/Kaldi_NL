@@ -53,6 +53,7 @@ numthreads=1           # used for decoding
 
 file_types="wav mp3"			# file types to include for transcription
 splittext=true
+json=false
 dorescore=true			# rescore with largeLM as default
 copyall=false			# copy all source files (true) or use symlinks (false)
 overwrite=true			# overwrite the 1st pass output if already present
@@ -60,7 +61,7 @@ multichannel=false
 inv_acoustic_scale="11"    # used for 1-best and N-best generation
 nbest=0					  # if value >0, generate NBest.ctm with this amount of transcription alternatives
 word_ins_penalty="-1.0"   # word insertion penalty
-beam=7
+beam=11
 decode_mbr=true
 miac=
 mwip=
@@ -83,7 +84,7 @@ if [ $# -lt 2 ]; then
     echo "  --config <config-file>             # config containing options"
     echo "  --nj <nj>                          # maximum number of parallel jobs"
     echo "  --cmd <cmd>                        # Command to run in parallel with"
-	if [ ! -z ${acwt+x} ]; then 
+    if [ ! -z ${acwt+x} ]; then 
     	echo "  --acwt <acoustic-weight>                 # value is ${acwt} ... used to get posteriors"
     fi
     echo "  --inv-acoustic-scale               # used for 1-best and N-best generation, may have multiple values, value is $inv_acoustic_scale"
@@ -92,6 +93,7 @@ if [ $# -lt 2 ]; then
     echo "  --file-types <extensions>          # include audio files with the given extensions, default \"wav mp3\" "
     echo "  --copyall <true/false>             # copy all source files (true) or use symlinks (false), value is $copyall"
     echo "  --splittext <true/false>           # split resulting 1Best.txt into separate .txt files for each input file, value is $splittext"
+    echo "  --json <true/false>                # create json encoded transcriptions, value is $json"
     exit 1;
 fi
 
@@ -139,6 +141,7 @@ if [ $stage -le 7 ]; then
 	totallines=$(cat $data/ALL/segments | wc -l)
 	rm -r -f ${inter}/decode
 **** INSERT DECODE ****
+	mv $inter/time.log $inter/time.decode.log
 fi
 
 ## rescore
@@ -156,9 +159,22 @@ if [ $stage -le 9 ] && [ $llmodel ] && [ -e $inter/decode/num_jobs ]; then
 	done
 	cat $inter/time.log | awk '{printf("\rRescoring completed in %d:%02d:%02d (CPU: %d:%02d:%02d), Memory used: %d MB                \n", int($1/3600), int($1%3600/60), int($1%3600%60), int(($2+$3)/3600), int(($2+$3)%3600/60), int(($2+$3)%3600%60), $4/1000) }'
 	rescore=$inter/rescore
+	mv $inter/time.log $inter/time.rescore.log
 fi
 
 [ $llmodel ] && rescore=$inter/rescore
+
+if [ $splittext ]; then
+	splittext='-s'
+else
+	splittext=''
+fi
+
+if [ $json ]; then
+	json='-j'
+else
+	json=''
+fi
 
 ## create readable output
 if [ $stage -le 11 ] && [ -e $rescore/num_jobs ]; then
@@ -197,7 +213,8 @@ if [ $stage -le 11 ] && [ -e $rescore/num_jobs ]; then
 			[ -s $data/ALL/all.glm ] && mv $result/1Best.${ident}ctm $rescore/1Best_prefilt.${ident}ctm && \
 				cat $rescore/1Best_prefilt.${ident}ctm | csrfilt.sh -s -i ctm -t hyp $data/ALL/all.glm >$result/1Best.${ident}ctm
 
-			local/ctmseg2sent.pl $result $splittext $ident
+			[ $ident ] && ident="-i '$ident'"
+			local/Create_JSON.py -t $json $splittext $ident $result
 		done
 	done
 fi
