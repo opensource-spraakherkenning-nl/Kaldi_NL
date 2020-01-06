@@ -1,7 +1,8 @@
 #!/bin/bash
-if [ -z "$KALDI_ROOT" ] && [ -z "$LM_PREFIX" ]; then 
+if [ -z "$KALDI_ROOT" ] && [ -z "$LM_PREFIX" ]; then
+    HOST=$(hostname)
     if [ "$HOST" = "mlp01" ]; then
-        #production installation for webservices on applejack, Nijmegen  
+        #production installation for webservices on applejack, Nijmegen
         #set KALDI_ROOT by activating LaMachine environment
         source /home/proycon/bin/lamachine-weblamachine-activate
     elif [ "${HOST:0:3}" = "mlp" ]; then
@@ -10,7 +11,7 @@ if [ -z "$KALDI_ROOT" ] && [ -z "$LM_PREFIX" ]; then
         source /vol/customopt/bin/lamachine-activate
     fi
 fi
-if [ ! -z "$KALDI_ROOT" ]; then
+if [ -z "$KALDI_ROOT" ]; then
     echo "Kaldi root not set! do an export KALDI_ROOT manually!" >&2
     exit 2
 fi
