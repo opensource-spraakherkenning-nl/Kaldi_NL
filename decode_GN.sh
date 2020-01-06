@@ -2,7 +2,7 @@
 
 #
 # Author: Laurens van der Werff (University of Twente)
-# 
+#
 # Apache 2.0
 #
 
@@ -14,10 +14,10 @@
 #   Use the configure.sh script to prepare this decode.sh script
 #
 # 	All input files that are specified on the command-line are linked or copied to a working directory, which is
-#	<output-dir>/intermediate/data. From here, all files with a chosen extension (default wav, mp3) are 
+#	<output-dir>/intermediate/data. From here, all files with a chosen extension (default wav, mp3) are
 #	used as input for the Kaldi speech transcription.
-# 
-#	If the following file types are present in the working (input) directory, they will be 
+#
+#	If the following file types are present in the working (input) directory, they will be
 #	automatically applied:
 #
 #   .ubm:	defines the sections in the files that should be transcribed
@@ -25,25 +25,25 @@
 #	.glm:	contains definitions for use by csrfilt.sh (part of sctk in the kaldi/tools directory), which are applied
 #			to the transcription
 #
-#	In case you want/need to copy all source materials, make sure there is enough space available in the target location. 
+#	In case you want/need to copy all source materials, make sure there is enough space available in the target location.
 #	Files are identified by their base filename, so there must be no duplicate names in a batch!
 #
 #   The procedure is as follows:
 #		1.	All source files which are specified on the command line are copied or linked to <output-dir>/intermediate/data
 #     	 	This directory is scanned for audio, which is then processed by the LIUM speaker diarization tool so as to produce
 #			chunks of up to 20 seconds in length.
-#			The LIUM segmentations are then processed to create the files needed for Kaldi: 
+#			The LIUM segmentations are then processed to create the files needed for Kaldi:
 #				wav.scp, segments, utt2spk, spk2utt, spk2gender
 #		2. 	MFCC features and CMVN stats are generated.
 #		3.	Speech transcription is performed. The type of recognizer is selected with the configure.sh script.
 #		4.	The resulting lattices are optionally rescored using a larger 4-gram language model.
 #		5.	1-best transcriptions are extracted from the rescored lattices and results are gathered into 1Best.ctm which contains
 #			all of the transcriptions. The segmentation from (1) is then used to create a 1Best.txt file.
-# 		6.	If a reference transcription (.stm) is available, an evaluation is performed using asclite. Results of the evalluation can then be 
+# 		6.	If a reference transcription (.stm) is available, an evaluation is performed using asclite. Results of the evalluation can then be
 #			found in <output-dir>/1Best.ctm.{dtl,pra,sys}
 #
 
-set -a 
+set -a
 
 cmd=run.pl
 nj=8                   # maximum number of simultaneous jobs used for feature generation and decoding
@@ -55,7 +55,7 @@ splittext=true
 dorescore=true			# rescore with largeLM as default
 copyall=false			# copy all source files (true) or use symlinks (false)
 overwrite=true			# overwrite the 1st pass output if already present
-multichannel=false		
+multichannel=false
 inv_acoustic_scale="11"    # used for 1-best and N-best generation
 nbest=0					  # if value >0, generate NBest.ctm with this amount of transcription alternatives
 word_ins_penalty="-1.0"   # word insertion penalty
@@ -89,7 +89,7 @@ if [ $# -lt 2 ]; then
     echo "  --config <config-file>             # config containing options"
     echo "  --nj <nj>                          # maximum number of parallel jobs"
     echo "  --cmd <cmd>                        # Command to run in parallel with"
-	if [ ! -z ${acwt+x} ]; then 
+	if [ ! -z ${acwt+x} ]; then
     	echo "  --acwt <acoustic-weight>                 # value is ${acwt} ... used to get posteriors"
     fi
     echo "  --inv-acoustic-scale               # used for 1-best and N-best generation, may have multiple values, value is $inv_acoustic_scale"
@@ -110,11 +110,11 @@ rescore=$inter/decode
 [ `echo $inv_acoustic_scale | wc -w` -gt 1 ] && miac=true
 [ `echo $word_ins_penalty | wc -w` -gt 1 ] && mwip=true
 
-set +a 
+set +a
 
 mkdir -p $inter
 timer="$(which time) -o $inter/time.log -f \"%e %U %S %M\""
-cp decode.sh $inter			# Make a copy of this file and..
+cp decode_GN.sh $inter/decode.sh			# Make a copy of this file and..
 echo "$0 $@" >$logging      # ..print the command line for logging
 
 ## data prep
@@ -128,7 +128,7 @@ if (( $numspeak == 0 )); then echo "No speech found, exiting."; exit
 elif (( $nj > $numspeak )); then this_nj=$numspeak; echo "Number of speakers is less than $nj, reducing number of jobs to $this_nj"
 else this_nj=$nj
 fi
-	
+
 ## feature generation
 if [ $stage -le 5 ]; then
 	echo "Feature generation" >$inter/stage
@@ -160,14 +160,14 @@ if [ $stage -le 6 ]; then
 
 	mv -f $tmp ${inter}/decode
 	rm -r $tmp_decode
-	
+
 fi
 
 ## rescore
-if [ $stage -le 7 ] && [ $llmodel ] && [ -e $inter/decode/num_jobs ]; then 
-	echo "Rescoring" >$inter/stage	
+if [ $stage -le 7 ] && [ $llmodel ] && [ -e $inter/decode/num_jobs ]; then
+	echo "Rescoring" >$inter/stage
 	numjobs=$(< $inter/decode/num_jobs)
-	eval $timer steps/lmrescore_const_arpa.sh --skip-scoring true $lpath $llpath $data/ALL $inter/decode $inter/rescore >>$logging 2>&1 &           
+	eval $timer steps/lmrescore_const_arpa.sh --skip-scoring true $lpath $llpath $data/ALL $inter/decode $inter/rescore >>$logging 2>&1 &
 	pid=$!
 	spin='-\|/'
 	i=0
@@ -184,11 +184,11 @@ fi
 
 ## create readable output
 if [ $stage -le 8 ] && [ -e $rescore/num_jobs ]; then
-	echo -e "Producing output" >$inter/stage   
-	
+	echo -e "Producing output" >$inter/stage
+
 	frame_shift_opt=
 	rm -f $data/ALL/1Best.* $result/1Best* $rescore/1Best.*
-	
+
 	numjobs=$(< $rescore/num_jobs)
 
 	if [ -f $model/frame_shift ]; then
@@ -233,7 +233,7 @@ if [ $stage -le 9 ] && [ -s $data/ALL/ref.stm ]; then
 			ident=
 			[ $mwip ] && ident="$wip."
 			[ $miac ] && ident="$ident$iac."
-			asclite -D -noisg -r $data/ALL/ref.stm stm -h $result/1Best.${ident}ctm ctm $uem -o sgml >>$logging 2>&1 
+			asclite -D -noisg -r $data/ALL/ref.stm stm -h $result/1Best.${ident}ctm ctm $uem -o sgml >>$logging 2>&1
 			cat $result/1Best.${ident}ctm.sgml | sclite -P -o sum -o pralign -o dtl -n $result/1Best.${ident}ctm  >>$logging 2>&1
 			[ $(cat $result/1Best.${ident}ctm.sys | grep 'MS\|FS\|MT\|FT' | wc -l) -gt 0 ] && local/split_results.sh $result/1Best.${ident}ctm.sys $result/1Best.${ident}ctm.sys.split
 		done
