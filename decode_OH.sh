@@ -64,12 +64,11 @@ decode_mbr=true
 miac=
 mwip=
 
-model=models/NL/UTwente/HMI/AM/CGN_all/nnet3_online/tdnn/v1.0
-lexicon=''
-lmodel=models/NL/UTwente/HMI/LM/OH_LM/v1.0/mixed-OH-NL.3gpr.kn.int.arpa.gz
-lpath=models/NL/UTwente/HMI/LM/OH_LM/v1.0/LG_mixed-OH-NL.3gpr.kn.int_UTwente_HMI_OH-NL-lexicon3
-llmodel=models/NL/UTwente/HMI/LM/OH_LM/v1.0/mixed-OH-NL.4gpr.kn.int.arpa.gz
-llpath=models/NL/UTwente/HMI/LM/OH_LM/v1.0/LG_mixed-OH-NL.3gpr.kn.int_UTwente_HMI_OH-NL-lexicon3/Const_tensusers_sahmadi_OHLM_OH-NL-alle_gegevensE2-VetinD-getuigen2_mixed-OH-NL.4gpr.kn.int
+model=models/AM
+lmodel=models/LM/LM_OH_3gpr.gz
+lpath=models/Lang_OH
+llmodel=models/LM/LM_OH_4gpr.gz
+llpath=models/LM/Const_OH
 extractor=
 
 
@@ -141,14 +140,16 @@ if [ $stage -le 5 ]; then
 fi
 
 ## decode
-if [ $stage -le 7 ]; then
+if [ $stage -le 6 ]; then
 	echo "Decoding" >$inter/stage
 	echo -n "Duration of speech: "
 	cat $data/ALL/segments | awk '{s+=$4-$3} END {printf("%.0f", s)}' | local/convert_time.sh
 	totallines=$(cat $data/ALL/segments | wc -l)
 	rm -r -f ${inter}/decode
-	tmp=`mktemp -d -p models/NL/UTwente/HMI/AM/CGN_all/nnet3_online/tdnn/v1.0`
-	eval $timer steps/online/nnet3/decode.sh --nj $this_nj --acwt 1.2 --post-decode-acwt 10.0 --skip-scoring true $model/graph_tensusers_sahmadi_OHLM_OH-NL-alle_gegevensE2-VetinD-getuigen2_mixed-OH-NL.3gpr.kn.int_UTwente_HMI_OH-NL-lexicon3 $data/ALL $tmp >>$logging 2>&1 &
+	tmp_decode=$result/tmp/ && mkdir -p $tmp_decode
+	tmp=`mktemp -d -p $tmp_decode`
+	cp -r models/AM/conf models/AM/final.mdl models/AM/frame_subsampling_factor $tmp_decode
+	eval $timer steps/online/nnet3/decode.sh --nj $this_nj --acwt 1.2 --post-decode-acwt 10.0 --skip-scoring true $model/graph_OH $data/ALL $tmp >>$logging 2>&1 &
 	pid=$!
  	while kill -0 $pid 2>/dev/null; do
  		linesdone=$(cat $tmp/log/decode.*.log 2>/dev/null | grep "Decoded utterance" | wc -l)
@@ -158,11 +159,12 @@ if [ $stage -le 7 ]; then
 	tail -1 $inter/time.log | awk '{printf( "NNet3 decoding completed in %d:%02d:%02d (CPU: %d:%02d:%02d), Memory used: %d MB                \n", int($1/3600), int($1%3600/60), int($1%3600%60), int(($2+$3)/3600), int(($2+$3)%3600/60), int(($2+$3)%3600%60), $4/1000) }'
 
 	mv -f $tmp ${inter}/decode
+	rm -r $tmp_decode
 	
 fi
 
 ## rescore
-if [ $stage -le 9 ] && [ $llmodel ] && [ -e $inter/decode/num_jobs ]; then 
+if [ $stage -le 7 ] && [ $llmodel ] && [ -e $inter/decode/num_jobs ]; then 
 	echo "Rescoring" >$inter/stage	
 	numjobs=$(< $inter/decode/num_jobs)
 	eval $timer steps/lmrescore_const_arpa.sh --skip-scoring true $lpath $llpath $data/ALL $inter/decode $inter/rescore >>$logging 2>&1 &           
@@ -181,7 +183,7 @@ fi
 [ $llmodel ] && rescore=$inter/rescore
 
 ## create readable output
-if [ $stage -le 11 ] && [ -e $rescore/num_jobs ]; then
+if [ $stage -le 8 ] && [ -e $rescore/num_jobs ]; then
 	echo -e "Producing output" >$inter/stage   
 	
 	frame_shift_opt=
@@ -223,7 +225,7 @@ if [ $stage -le 11 ] && [ -e $rescore/num_jobs ]; then
 fi
 
 ## score if reference transcription exists
-if [ $stage -le 13 ] && [ -s $data/ALL/ref.stm ]; then
+if [ $stage -le 9 ] && [ -s $data/ALL/ref.stm ]; then
 	echo -e "Scoring" >$inter/stage
 	# score using asclite, then produce alignments and reports using sclite
 	[ -s $data/ALL/test.uem ] && uem="-uem $data/ALL/test.uem"

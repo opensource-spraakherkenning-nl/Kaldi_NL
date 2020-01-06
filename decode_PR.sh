@@ -59,16 +59,16 @@ multichannel=false
 inv_acoustic_scale="11"    # used for 1-best and N-best generation
 nbest=0					  # if value >0, generate NBest.ctm with this amount of transcription alternatives
 word_ins_penalty="-1.0"   # word insertion penalty
-beam=11
+beam=7
 decode_mbr=true
 miac=
 mwip=
 
 model=models/AM
-lmodel=models/LM/LM_3gpr.gz
-lpath=models/Lang
-llmodel=models/LM/LM_4gpr.gz
-llpath=models/LM/Const
+lmodel=models/LM/LM_PR_3gpr.gz
+lpath=models/Lang_PR
+llmodel=models/LM/LM_PR_4gpr.gz
+llpath=models/LM/Const_PR
 extractor=
 
 
@@ -149,7 +149,7 @@ if [ $stage -le 6 ]; then
 	tmp_decode=$result/tmp/ && mkdir -p $tmp_decode
 	tmp=`mktemp -d -p $tmp_decode`
 	cp -r models/AM/conf models/AM/final.mdl models/AM/frame_subsampling_factor $tmp_decode
-	eval $timer steps/online/nnet3/decode.sh --nj $this_nj --acwt 1.2 --post-decode-acwt 10.0 --skip-scoring true $model/graph $data/ALL $tmp >>$logging 2>&1 &
+	eval $timer steps/online/nnet3/decode.sh --nj $this_nj --acwt 1.2 --post-decode-acwt 10.0 --skip-scoring true $model/graph_PR $data/ALL $tmp >>$logging 2>&1 &
 	pid=$!
  	while kill -0 $pid 2>/dev/null; do
  		linesdone=$(cat $tmp/log/decode.*.log 2>/dev/null | grep "Decoded utterance" | wc -l)
@@ -197,6 +197,7 @@ if [ $stage -le 8 ] && [ -e $rescore/num_jobs ]; then
 		factor=$(cat $model/frame_subsampling_factor) || exit 1
 		frame_shift_opt="--frame-shift=0.0$factor"
 	fi
+
 	# produce 1-Best with confidence
 	for iac in $inv_acoustic_scale; do
 		for wip in $word_ins_penalty; do
