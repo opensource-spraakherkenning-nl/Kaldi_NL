@@ -18,7 +18,7 @@ for line in open(rttm_file, 'r', encoding='utf-8'):
 
 b_times = np.array(b_times)
 
-with open(ctm_file+'.spk', 'wa', encoding='utf-8') as fid:
+with open(ctm_file+'.spk', 'a', encoding='utf-8') as fid:
     for line in open(ctm_file, 'r', encoding='utf-8'):
         fields = line.split()
         spk_id = spk_info[np.sum(b_times<float(fields[2]))-1]
