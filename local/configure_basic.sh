@@ -47,6 +47,7 @@ if [ ! -d models/NL ]; then
     if [ ! -e models ]; then
         ln -s -f $modelpack/Models models
     fi
+    rm $modelpack/Models_Starterspack.tar.gz
 fi
 [ ! -d models/NL ] && fatalerror "Something went wrong: models were not installed."
 
