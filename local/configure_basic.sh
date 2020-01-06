@@ -63,7 +63,7 @@ fi
 if [ ! -e models/Lang_OH ]; then
 	modelpack=$(readlink -f models)/..
 	if [ ! -e $modelpack/oral_history_models.tar.gz ]; then
-        wget -P $modelpack https://applejack.science.ru.nl/downloads/oral_history/oral_history_models.tar.gz || fatalerror "Unable to download oral history models from applejack.science.ru.nl!"
+        wget -P $modelpack https://applejack.science.ru.nl/downloads/oral_history_models.tar.gz || fatalerror "Unable to download oral history models from applejack.science.ru.nl!"
     fi
 	tar -xvzf $modelpack/oral_history_models.tar.gz -C $modelpack || fatalerror "Failure during extraction of models"
 
