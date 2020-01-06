@@ -1,11 +1,24 @@
 #!/bin/bash
 
+fatalerror() {
+    echo "$*" >&2
+    exit 2
+}
+
 #
 # setup kaldi_root
 #
-kaldiroot=$(cat path.sh | grep "export KALDI_ROOT=" | awk -F'=' '{print $2}')
+if [ -z "$KALDI_ROOT" ]; then
+    kaldiroot=$(cat path.sh | grep "export KALDI_ROOT=" | awk -F'=' '{print $2}')
+else
+    kaldiroot=$KALDI_ROOT
+fi
 return_value=0
-modelpack=
+if [ ! -z "$LM_PREFIX" ]; then
+    modelpack=$LM_PREFIX/opt/kaldi_nl
+else
+    modelpack=
+fi
 
 while [ ! -d $kaldiroot/egs ] && [ $return_value -eq 0 ]; do
 	kaldiroot=$(dialog --stdout --title "KALDI_ROOT not properly set" --inputbox "Enter location of your KALDI installation " 0 0 "$kaldiroot")
@@ -19,27 +32,55 @@ sed -i "s%KALDI_ROOT=.*$%KALDI_ROOT=$kaldiroot%" path.sh
 #
 
 if [ ! -d models/NL ]; then
-	while [ $return_value -eq 0 ] && ! readlink -f $modelpack; do
-		modelpack=$(dialog --stdout --title "Models not found" --inputbox "Enter location to download & store models, do not use ~ " 0 0 "$modelpack")
-		return_value=$?	
-	done	
-	[ ! $return_value -eq 0 ] && echo "Models not downloaded. Cancelling" && exit 1
+    if [ -z "$modelpack" ]; then
+        while [ $return_value -eq 0 ] && ! readlink -f $modelpack; do
+            modelpack=$(dialog --stdout --title "Models not found" --inputbox "Enter location to download & store models, do not use ~ " 0 0 "$modelpack")
+            return_value=$?
+        done
+    fi
+	[ ! $return_value -eq 0 ] && fatalerror "Models not downloaded. Cancelling"
 	mkdir -p $modelpack
-	[ ! -e $modelpack/Models_Starterpack.tar.gz ] && wget -P $modelpack http://nlspraak.ewi.utwente.nl/open-source-spraakherkenning-NL/Models_Starterpack.tar.gz
-	tar -xvzf $modelpack/Models_Starterpack.tar.gz -C $modelpack
-	rm -rf models
-	ln -s -f $modelpack/Models models
+    if [ ! -e $modelpack/Models_Starterpack.tar.gz ]; then
+        wget -P $modelpack https://nlspraak.ewi.utwente.nl/open-source-spraakherkenning-NL/Models_Starterpack.tar.gz || fatalerror "Unable to download models from nlspraak.ewi.utwente.nl!"
+    fi
+	tar -xvzf $modelpack/Models_Starterpack.tar.gz -C $modelpack || fatalerror "Failure during extraction of models"
+    if [ ! -e models ]; then
+        ln -s -f $modelpack/Models models
+    fi
+    rm $modelpack/Models_Starterpack.tar.gz
 fi
-[ ! -d models/NL ] && echo "Something went wrong: models were not installed." && exit 1
+[ ! -d models/NL ] && fatalerror "Something went wrong: models were not installed."
 
 if [ ! -e models/Patch1 ]; then
 	modelpack=$(readlink -f models)/..
-	[ ! -e $modelpack/Models_Patch1.tar.gz ] && wget -P $modelpack http://nlspraak.ewi.utwente.nl/open-source-spraakherkenning-NL/Models_Patch1.tar.gz
-	tar -xvzf $modelpack/Models_Patch1.tar.gz -C $modelpack
+	if [ ! -e $modelpack/Models_Patch1.tar.gz ]; then
+        wget -P $modelpack https://nlspraak.ewi.utwente.nl/open-source-spraakherkenning-NL/Models_Patch1.tar.gz || fatalerror "Unable to download Patch1 model from nlspraak.ewi.utwente.nl!"
+    fi
+	tar -xvzf $modelpack/Models_Patch1.tar.gz -C $modelpack || fatalerror "Failure during extraction of models"
+
+    rm $modelpack/Models_Patch1.tar.gz
 fi
-	
+
+if [ ! -e models/Lang_OH ]; then
+	modelpack=$(readlink -f models)/..
+	if [ ! -e $modelpack/oral_history_models.tar.gz ]; then
+        wget -P $modelpack https://applejack.science.ru.nl/downloads/oral_history_models.tar.gz || fatalerror "Unable to download oral history models from applejack.science.ru.nl!"
+    fi
+	tar -xvzf $modelpack/oral_history_models.tar.gz -C $modelpack || fatalerror "Failure during extraction of models"
+
+    rm $modelpack/oral_history_models.tar.gz
+fi
+
 
 #
+# Correct hardcoded paths in existing configuration files:
+
+#for original models from twente:
+find -name "*.conf" | xargs sed -i "s|/home/laurensw/Documents|$modelpack|g"
+
+#for oral_history:
+find -name "*.conf" | xargs sed -i "s|/vol/customopt/kaldi/egs/Kaldi_NL|$modelpack|g"
+
 # check for presence of java and available memory
 #
 messages=
