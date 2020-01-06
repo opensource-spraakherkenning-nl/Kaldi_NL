@@ -1,10 +1,10 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
-import xml.etree.cElementTree as ET
-import codecs, sys, pdb
+import sys, pdb
 import re
 import wave
 import contextlib
+import xml.etree.cElementTree as ET
 import xml.dom.minidom
 
 
@@ -17,17 +17,16 @@ ResFolder = sys.argv[1]
 UttId = sys.argv[2]
 AudioFolder = sys.argv[3]
 
-f=codecs.open(ResFolder+'/'+UttId+'.ctm','r',encoding='utf-8')
-lines=[]
-for line in f:
-    lines.append(line)
+with open(ResFolder+'/'+UttId+'.ctm','r',encoding='utf-8') as f:
+    lines=[]
+    for line in f:
+        lines.append(line)
 
 
 
 CTM=[]
 Res={}
 for line in lines:
-
     if line.find('\n')>0:
         line=re.sub("\n"," ",line)
     tmp=line.split(" ")
@@ -71,7 +70,6 @@ ET.SubElement(SpeakerList, "Speaker", lang="dut", tconf="1.0", nw=nwords, lconf=
 SpeechSegment=ET.SubElement(SegmentList, "SpeechSegment", lang="dut", lconf="1.00", spkid="Int", ch="1", trs="1", stime=CTM[0]['stime'], etime=sdur, sconf="1.00")
 
 for line in CTM:
-
     ET.SubElement(SpeechSegment, "Word", stime=line['stime'], dur=line['dur'], conf=line['conf']).text=line['word']
 
 
@@ -80,6 +78,6 @@ tree.write(ResFolder+'/'+CTM[0]['fname']+".xml",encoding="UTF-8",xml_declaration
 
 xml = xml.dom.minidom.parse(ResFolder+'/'+CTM[0]['fname']+".xml")
 pretty_xml = xml.toprettyxml()
-fid = codecs.open(ResFolder+'/'+CTM[0]['fname']+".xml",'w',encoding='utf-8')
-fid.write(pretty_xml)
-fid.close()
+with open(ResFolder+'/'+CTM[0]['fname']+".xml",'w',encoding='utf-8') as fid:
+    fid.write(pretty_xml)
+    fid.close()
