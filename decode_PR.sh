@@ -113,7 +113,12 @@ rescore=$inter/decode
 set +a
 
 mkdir -p $inter
-timer="$(which time) -o $inter/time.log -f \"%e %U %S %M\""
+timer="$(which time)" #This is not the shell's time function but GNU time! needs to be installed explicitly or you get weird errors!
+if [ -z "$timer" ]; then
+    echo "GNU time not found  (apt install time)">&2
+    exit 2
+fi
+timer="$timer -o $inter/time.log -f \"%e %U %S %M\""
 cp decode_PR.sh $inter/decode.sh			# Make a copy of this file and..
 echo "$0 $@" >$logging      # ..print the command line for logging
 
