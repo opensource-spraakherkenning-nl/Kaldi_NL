@@ -42,11 +42,6 @@ if [ ! -e models ]; then
     ln -s -f $modelpack/Models models
 fi
 
-#this is an ugly hack that shouldn't really be here but is needed because something somewhere messes up its paths
-if [ ! -e $modelpack/Models/Models ]; then
-    ln -s $modelpack/Models $modelpack/Models/Models
-fi
-
 if [ ! -d models/NL ]; then
     if [ ! -e $modelpack/Models_Starterpack.tar.gz ]; then
         wget -P $modelpack https://nlspraak.ewi.utwente.nl/open-source-spraakherkenning-NL/Models_Starterpack.tar.gz || fatalerror "Unable to download models from nlspraak.ewi.utwente.nl!"
@@ -72,6 +67,11 @@ if [ ! -e models/Lang_OH ]; then
 	tar -xvzf $modelpack/oral_history_models.tar.gz -C $modelpack || fatalerror "Failure during extraction of models"
 
     rm $modelpack/oral_history_models.tar.gz
+fi
+
+#this is an ugly hack that shouldn't really be here but is needed because something somewhere messes up its paths
+if [ ! -e $modelpack/Models/Models ]; then
+    ln -s $modelpack/Models $modelpack/Models/Models
 fi
 
 
