@@ -115,7 +115,7 @@ if [ -z "$timer" ]; then
     exit 2
 fi
 timer="$(which time) -o $inter/time.log -f \"%e %U %S %M\""
-cp decode.sh $inter			# Make a copy of this file and..
+cp "$0" "$inter/decode.sh" 	# Make a copy of this file and..
 echo "$0 $@" >$logging      # ..print the command line for logging
 
 ## data prep
