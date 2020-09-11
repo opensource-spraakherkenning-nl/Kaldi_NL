@@ -4,17 +4,13 @@
 ## Introduction
 
 These scripts may be used to convert speech contained in audio files into text using the Kaldi open-source speech
-recognition system. Running them requires installation of Kaldi (http://kaldi-asr.org/), Java, and SoX (http://sox.sourceforge.net/).
-They have been tested on Ubuntu 16.10, but are expected to run on other flavors of Linux as well.
-
-The use of these scripts under OSX is not supported, but we have been able to make them work. Just as with the default
-Kaldi recipes, most issues stem from the use of the standard bash tools. So use gcp, gawk, gsed, gtime, gfile, etc
-in place of cp, awk, sed, time, and file.
-If you encounter any other issues with these script on OSX, please let us know, especially if you've been able to fix them :-)
+recognition system.
 
 ## Installation
 
-The software is run from the directory where you cloned this repository.
+The software is run from the directory where you cloned this repository.  Kaldi NL depends on a working installation of
+Kaldi (http://kaldi-asr.org/), Java, Perl, Python 3, and SoX (http://sox.sourceforge.net/).  They have been tested on
+Ubuntu Linux 16.10, 18.04 LTS and 20.04 LTS but are expected to run on other Linux distributions as well.
 
 Before running the decoder for the first time, or when you need to change its configuration, please run ``configure.sh``.
 The ``configure.sh`` script will ask for the location of your Kaldi installation, and for the location to put the models.
@@ -28,11 +24,14 @@ in that case you can specify one or more of the following models as a parameter 
 
 * **oralhistory** - These are models and decoder graphs for oral history interviews (OH), parliamentary talks (PR), and daily conversations (GN) created by Emre Yilmaz, CLST, Radboud University, Nijmegen. A decode script is supplied for for each, respectively named ``decoder_OH.sh``, ``decoder_PR.sh`` and ``decode_GN.sh``.
 
-Kaldi NL relies on the following notable external dependencies (not necessarily exhaustive): [kaldi](https://github.com/kaldi-asr/kaldi), perl, python (3), java, sox, GNU time
-
 Kaldi NL, with all its dependencies, is also included as an optional extra in the [LaMachine
 meta-distribution](https://proycon.github.io/LaMachine) , this may make it more readily usable/deployable by end-users.
 For instance in containerised (e.g. docker) or virtual machine form.
+
+The use of these scripts under macOS is not supported, but we have been able to make them work. Just as with the default
+Kaldi recipes, most issues stem from the use of the standard bash tools. So use gcp, gawk, gsed, gtime, gfile, etc
+in place of cp, awk, sed, time, and file.
+If you encounter any other issues with these script on macOS, please let us know, especially if you've been able to fix them :-)
 
 ## Usage
 
