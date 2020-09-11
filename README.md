@@ -63,8 +63,8 @@ Rescore LM: NL/UTwente/HMI/LM/KrantenTT & v1.0/KrantenTT.4gpr.kn.int.arpa.gz
 
 ## Licensing
 
-Kaldi-NL is licensed under the Apache 2.0 licence, this concerns only the scripts directly included in this repository.
-The various models that can be obtained through Kaldi-NL, however, are not by default included under this licensed may
-be licensed differently.
+Kaldi-NL is licensed under the Apache 2.0 licence, this concerns only the scripts directly included in this repository
+and where not explicitly noted otherwise. Note that the various models that can be obtained through Kaldi-NL are never by
+default covered by this license and may often be licensed differently.
 
 
