@@ -65,6 +65,9 @@ AM: NL/UTwente/HMI/AM/CGN_all/nnet3_online/tdnn
 LM: v1.0/KrantenTT.3gpr.kn.int.arpa.gz
 Rescore LM: NL/UTwente/HMI/LM/KrantenTT & v1.0/KrantenTT.4gpr.kn.int.arpa.gz
 
+## Contribute your own models!
+
+Please see [CONTRIBUTING.md](the contributing guidelines) and contribute your own models and decoding pipelines!
 
 ## Licensing
 
