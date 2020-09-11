@@ -13,5 +13,6 @@ if [ ! -e models/Lang_OH ]; then
     rm oral_history_models.tar.gz
 
     #correct absolute paths
-    find -name "*.conf" | xargs sed -i "s|/vol/customopt/kaldi/egs/Kaldi_NL|$root|g"
+    find -name "*.conf" | xargs sed -i "s|/vol/customopt/kaldi/egs/Kaldi_NL/Models|$modelpack|g"
+    find -name "*.conf" | xargs sed -i "s|/vol/customopt/kaldi/egs/Kaldi_NL|$root|g" #probably redundant
 fi
