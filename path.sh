@@ -1,14 +1,16 @@
 #!/bin/bash
-if [ -z "$KALDI_ROOT" ] && [ -z "$LM_PREFIX" ]; then
+if [ -z "$KALDI_ROOT" ]; then
     HOST=$(hostname)
-    if [ "$HOST" = "mlp01" ]; then
-        #production installation for webservices on applejack, Nijmegen
-        #set KALDI_ROOT by activating LaMachine environment
-        source /home/proycon/bin/lamachine-weblamachine-activate
-    elif [ "${HOST:0:3}" = "mlp" ]; then
-        #we're running in Nijmegen on the normal installation for users
-        #set KALDI_ROOT by activating LaMachine environment
-        source /vol/customopt/bin/lamachine-activate
+    DOMAIN=$(hostname -d)
+    if [ -x "path.$HOST.sh" ]; then
+        #source host-specific path.sh
+        source "path.$HOST.sh"
+    elif [ -x "path.$DOMAIN.sh" ]; then
+        #source domain specific path.sh
+        source "path.$DOMAIN.sh"
+    elif [ -x "path.custom.sh" ]; then
+        #source custom path.sh
+        source "path.custom.sh"
     fi
 fi
 if [ -z "$KALDI_ROOT" ]; then
