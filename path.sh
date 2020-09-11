@@ -1,20 +1,27 @@
 #!/bin/bash
+
+# -------DO NOT EDIT THIS SCRIPT ----------
+# do not set a hard-coded KALDI_ROOT here!
+# you can do so in path.custom.sh instead
+# or create a host/domain specific path.*.sh
+# -----------------------------------------
+
 if [ -z "$KALDI_ROOT" ]; then
     HOST=$(hostname)
     DOMAIN=$(hostname -d)
-    if [ -x "path.$HOST.sh" ]; then
+    if [ -e "path.$HOST.sh" ]; then
         #source host-specific path.sh
         source "path.$HOST.sh"
-    elif [ -x "path.$DOMAIN.sh" ]; then
+    elif [ -e "path.$DOMAIN.sh" ]; then
         #source domain specific path.sh
         source "path.$DOMAIN.sh"
-    elif [ -x "path.custom.sh" ]; then
+    elif [ -e "path.custom.sh" ]; then
         #source custom path.sh
         source "path.custom.sh"
     fi
 fi
 if [ -z "$KALDI_ROOT" ]; then
-    echo "Kaldi root not set! do an export KALDI_ROOT manually!" >&2
+    echo "Kaldi root not set! do an export KALDI_ROOT manually or create a path.custom.sh with the export!" >&2
     exit 2
 fi
 [ -f $KALDI_ROOT/tools/env.sh ] && . $KALDI_ROOT/tools/env.sh

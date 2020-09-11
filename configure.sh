@@ -1,8 +1,13 @@
 #!/bin/bash
 
-[ $(which dialog) ] || { echo 'Please install "dialog" to use this configurator.' >&2; exit; };
-# [ $(which realpath) ] || { echo 'Please install "realpath" to use this configurator.' >&2; exit; };
+[ $(which dialog) ] || { echo 'Please install "dialog" to use this configurator.' >&2; exit 1; };
+[ $(which realpath) ] || { echo 'Please install "realpath" to use this configurator.' >&2; exit 1; };
 
-local/configure_basic.sh && \
-local/configure_download.sh && \
-local/configure_decode.sh
+root=$(realpath $(dirname $0))
+cd $root
+
+source local/configure_basic.sh
+source local/configure_download.sh
+if [ ! -z "$@" ]; then
+    source local/configure_decode.sh
+fi

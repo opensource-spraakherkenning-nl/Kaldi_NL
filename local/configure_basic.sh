@@ -1,4 +1,8 @@
 #!/bin/bash
+(return 0 2>/dev/null) && sourced=1 || sourced=0
+if [ $sourced -eq 0 ]; then
+    echo "this script should not be run directly but through configure.sh in the kaldi_nl root directory">&2
+fi
 
 fatalerror() {
     echo "$*" >&2
@@ -9,80 +13,32 @@ fatalerror() {
 # setup kaldi_root
 #
 if [ -z "$KALDI_ROOT" ]; then
-    kaldiroot=$(cat path.sh | grep "export KALDI_ROOT=" | awk -F'=' '{print $2}')
+    HOST=$(hostname)
+    DOMAIN=$(hostname -d)
+    if [ -x "path.$HOST.sh" ]; then
+        #source host-specific path.sh
+        source "path.$HOST.sh"
+    elif [ -x "path.$DOMAIN.sh" ]; then
+        #source domain specific path.sh
+        source "path.$DOMAIN.sh"
+    elif [ -x "path.custom.sh" ]; then
+        #source custom path.sh
+        source "path.custom.sh"
+    fi
+    kaldiroot=$KALDI_ROOT
 else
     kaldiroot=$KALDI_ROOT
 fi
 return_value=0
-if [ ! -z "$LM_PREFIX" ]; then #if we run inside LaMachine, then we simply set the model pack relative to the LaMachine prefix (so we need no manual intervention)
-    modelpack=$LM_PREFIX/opt/kaldi_nl
-else
-    modelpack=
-fi
 
-while [ ! -d $kaldiroot/egs ] && [ $return_value -eq 0 ]; do
-	kaldiroot=$(dialog --stdout --title "KALDI_ROOT not properly set" --inputbox "Enter location of your KALDI installation " 0 0 "$kaldiroot")
-	return_value=$?
-done
-[ ! $return_value -eq 0 ] && echo "KALDI_ROOT not set. Cancelling" && exit 1
-sed -i "s%KALDI_ROOT=.*$%KALDI_ROOT=$kaldiroot%" path.sh
-
-#
-# get models (temporary process, a separate script for retrieving and updating models is forthcoming)
-#
-if [ ! -d models/NL ] && [ -z "$modelpack" ]; then
-    while [ $return_value -eq 0 ] && ! readlink -f $modelpack; do
-        modelpack=$(dialog --stdout --title "Models not found" --inputbox "Enter location to download & store models, do not use ~ " 0 0 "$modelpack")
+if [ ! -d $kaldiroot/egs ]; then
+    while [ ! -d $kaldiroot/egs ] && [ $return_value -eq 0 ]; do
+        kaldiroot=$(dialog --stdout --title "KALDI_ROOT not properly set" --inputbox "Enter location of your KALDI installation " 0 0 "$kaldiroot")
         return_value=$?
     done
-    [ ! $return_value -eq 0 ] && fatalerror "Models not downloaded. Cancelling"
+    [ ! $return_value -eq 0 ] && echo "KALDI_ROOT not set. Cancelling" && exit 1
+    echo -e "#!/bin/sh\nexport KALDI_ROOT=$kaldiroot" > path.$(hostname).sh
 fi
-mkdir -p $modelpack || fatalerror "Model base directory $modelpack does not exist and unable to create"
-if [ ! -e models ]; then
-    ln -s -f $modelpack/Models models
-fi
-
-if [ ! -d models/NL ]; then
-    if [ ! -e $modelpack/Models_Starterpack.tar.gz ]; then
-        wget -P $modelpack https://nlspraak.ewi.utwente.nl/open-source-spraakherkenning-NL/Models_Starterpack.tar.gz || fatalerror "Unable to download models from nlspraak.ewi.utwente.nl!"
-    fi
-	tar -xvzf $modelpack/Models_Starterpack.tar.gz -C $modelpack || fatalerror "Failure during extraction of models"
-    rm $modelpack/Models_Starterpack.tar.gz
-fi
-[ ! -d models/NL ] && fatalerror "Something went wrong: models were not installed."
-
-if [ ! -e models/Patch1 ]; then
-	if [ ! -e $modelpack/Models_Patch1.tar.gz ]; then
-        wget -P $modelpack https://nlspraak.ewi.utwente.nl/open-source-spraakherkenning-NL/Models_Patch1.tar.gz || fatalerror "Unable to download Patch1 model from nlspraak.ewi.utwente.nl!"
-    fi
-	tar -xvzf $modelpack/Models_Patch1.tar.gz -C $modelpack || fatalerror "Failure during extraction of models"
-
-    rm $modelpack/Models_Patch1.tar.gz
-fi
-
-if [ ! -e models/Lang_OH ]; then
-	if [ ! -e $modelpack/oral_history_models.tar.gz ]; then
-        wget -P $modelpack https://applejack.science.ru.nl/downloads/oral_history_models.tar.gz || fatalerror "Unable to download oral history models from applejack.science.ru.nl!"
-    fi
-	tar -xvzf $modelpack/oral_history_models.tar.gz -C $modelpack || fatalerror "Failure during extraction of models"
-
-    rm $modelpack/oral_history_models.tar.gz
-fi
-
-#this is an ugly hack that shouldn't really be here but is needed because something somewhere messes up its paths
-if [ ! -e $modelpack/Models/Models ]; then
-    ln -s $modelpack/Models $modelpack/Models/Models
-fi
-
-
-#
-# Correct hardcoded paths in existing configuration files:
-
-#for original models from twente:
-find -name "*.conf" | xargs sed -i "s|/home/laurensw/Documents|$modelpack|g"
-
-#for oral_history:
-find -name "*.conf" | xargs sed -i "s|/vol/customopt/kaldi/egs/Kaldi_NL|$modelpack|g"
 
 # check for presence of java and available memory
 #
@@ -107,10 +63,8 @@ messages=
 #
 # create symlinks to the scripts
 #
-ln -s -f $kaldiroot/egs/wsj/s5/steps steps
-ln -s -f $kaldiroot/egs/wsj/s5/utils utils
+ln -s -f $kaldiroot/egs/wsj/s5/steps steps || fatalerror "unable to create link to $kaldiroot/egs/wsj/s5/steps"
+ln -s -f $kaldiroot/egs/wsj/s5/utils utils || fatalerror "unable to create link to $kaldiroot/egs/wsj/s5/utils"
 
 #set permissive permissions
 chmod -R a+r .
-
-
