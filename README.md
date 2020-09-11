@@ -29,7 +29,7 @@ meta-distribution](https://proycon.github.io/LaMachine) , this may make it more 
 For instance in containerised (e.g. docker) or virtual machine form.
 
 The use of these scripts under macOS is not supported, but we have been able to make them work. Just as with the default
-Kaldi recipes, most issues stem from the use of the standard bash tools. So use gcp, gawk, gsed, gtime, gfile, etc
+Kaldi recipes, most issues stem from the use of the standard GNU tools. So use gcp, gawk, gsed, gtime, gfile, etc
 in place of cp, awk, sed, time, and file.
 If you encounter any other issues with these script on macOS, please let us know, especially if you've been able to fix them :-)
 
