@@ -28,6 +28,12 @@ in that case you can specify one or more of the following models as a parameter 
 
 * **oralhistory** - These are models and decoder graphs for oral history interviews (OH), parliamentary talks (PR), and daily conversations (GN) created by Emre Yilmaz, CLST, Radboud University, Nijmegen. A decode script is supplied for for each, respectively named ``decoder_OH.sh``, ``decoder_PR.sh`` and ``decode_GN.sh``.
 
+Kaldi NL relies on the following notable external dependencies (not necessarily exhaustive): [kaldi](https://github.com/kaldi-asr/kaldi), perl, python (3), java, sox, GNU time
+
+Kaldi NL, with all its dependencies, is also included as an optional extra in the [LaMachine
+meta-distribution](https://proycon.github.io/LaMachine) , this may make it more readily usable/deployable by end-users.
+For instance in containerised (e.g. docker) or virtual machine form.
+
 ## Usage
 
 The decode script is called with:

@@ -47,6 +47,8 @@ messages=
 [ "$(sox -h | grep 'AUDIO FILE FORMATS' | grep ' mp3 ')" ] || messages="${messages}## Warning: mp3 support for SOX is not installed.\n"
 [ $(which time) ] || messages="${messages}## Warning: TIME not found, please install before using the decode script.\n"
 [ $(which java) ] || messages="${messages}## Warning: JAVA not found, please install before using the decode script.\n"
+[ $(which perl) ] || messages="${messages}## Warning: Perl not found, please install before using the decode script.\n"
+[ $(which python3) ] || messages="${messages}## Warning: Python (3+) not found, please install before using the decode script.\n"
 [ $(free -t -m | grep Total | awk '{print $4}') -lt 6000 ] && messages="${messages}## Warning: You have less than 6GB of available memory, this script may hang/crash! Proceed with caution!\n"
 [ "$messages" ] && dialog --stdout --title "Warnings" --msgbox "Some problems were found:\n${messages}" 0 0
 
