@@ -8,6 +8,6 @@ cd $root
 
 source local/configure_basic.sh
 source local/configure_download.sh
-if [ -z "$@" ]; then
+if [ -z "$1" ]; then
     source local/configure_decode.sh
 fi
