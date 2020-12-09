@@ -16,8 +16,7 @@ Before running the decoder for the first time, or when you need to change its co
 The ``configure.sh`` script will ask for the location of your Kaldi installation, and for the location to put the models.
 
 A ``decode.sh`` script is dynamically generated based on the selected models, as
-are the decoding graphs needed for Kaldi. This last step may take a while (but on a 16GB machine usually no more than an
-hour or so).
+are the decoding graphs needed for Kaldi. This last step may take a while (but on a 16GB machine usually no more than an hour or so).
 
 It is also possible to install a completely pre-made decoder, as supplied by certain partners
 in that case you can specify one or more of the following models as a parameter to ``configure.sh``:
@@ -53,11 +52,15 @@ As part of the transcription process, the LIUM speech diarization toolkit is uti
 `<output-dir>/liumlog`, which contains .seg files that provide information about the speaker diarization. For more
 information on the content of these files, please visit http://www-lium.univ-lemans.fr/diarization/.
 
+### Web Interface
+
+The docker image ships with a web interface based on [CLAM](https://proycon.github.io/clam/). To use the web interface, start the web server by running the ``lamachine-start-webserver`` command. The web interface for Kaldi-NL can be found on ``http://<docker-container-ip>/oralhistory``.
+
+
 ## Details
 
 Due to the nature of decoding with Kaldi, its use of FSTs, and the size of the models in the starterpack, a machine with
-less than 8GB of memory will probably not be able to compile the graphs or provide very useful ASR performance. In any case,
-make sure the number of jobs does not crush your machine (use the --nj parameter).
+less than 8GB of memory will probably not be able to compile the graphs or provide very useful ASR performance. In any case, make sure the number of jobs does not crush your machine (use the --nj parameter). Also be advised that building the docker image requires at least 60GiB of available disk space.
 
 In the starterpack of Dutch models, the best current performance can be expected when using:
 AM: NL/UTwente/HMI/AM/CGN_all/nnet3_online/tdnn
