@@ -66,8 +66,12 @@ messages=
 # create symlinks to the scripts
 #
 cwd=$(pwd)
-ln -s -f $kaldiroot/egs/wsj/s5/steps $root/steps || fatalerror "unable to create link to $kaldiroot/egs/wsj/s5/steps in $root"
-ln -s -f $kaldiroot/egs/wsj/s5/utils $root/utils || fatalerror "unable to create link to $kaldiroot/egs/wsj/s5/utils in $root"
+if [ ! -e $root/steps ]; then
+    ln -s -f $kaldiroot/egs/wsj/s5/steps $root/steps || fatalerror "unable to create link to $kaldiroot/egs/wsj/s5/steps in $root"
+fi
+if [ ! -e $root/utils ]; then
+    ln -s -f $kaldiroot/egs/wsj/s5/utils $root/utils || fatalerror "unable to create link to $kaldiroot/egs/wsj/s5/utils in $root"
+fi
 
 #set permissive permissions
 chmod -R a+r .
