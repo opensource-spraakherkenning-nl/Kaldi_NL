@@ -168,9 +168,9 @@ if [ $stage -le 6 ]; then
 	mv -f $tmp ${inter}/decode
     if [ ! -e "${inter}/decode/lat.JOB.gz" ] || [ $failed -eq 1 ]; then
         echo -e "NNET3 DECODING FAILED! Log follows:\n===========================\nNNET 3 DECODE LOG\n=========================" >&2
-        cat $tmp/decode/log/decode.${this_nj}.log >&2
+        cat ${inter}/decode/log/decode.${this_nj}.log >&2
         tail -1 $inter/time.log | awk '{printf( "NNet3 decoding *FAILED* in %d:%02d:%02d (CPU: %d:%02d:%02d), Memory used: %d MB                \n", int($1/3600), int($1%3600/60), int($1%3600%60), int(($2+$3)/3600), int(($2+$3)%3600/60), int(($2+$3)%3600%60), $4/1000) }'
-        die "Decoding failed, inspect log above"
+        die "Decoding failed, inspect decode log above"
     fi
 	tail -1 $inter/time.log | awk '{printf( "NNet3 decoding completed in %d:%02d:%02d (CPU: %d:%02d:%02d), Memory used: %d MB                \n", int($1/3600), int($1%3600/60), int($1%3600%60), int(($2+$3)/3600), int(($2+$3)%3600/60), int(($2+$3)%3600%60), $4/1000) }'
 
