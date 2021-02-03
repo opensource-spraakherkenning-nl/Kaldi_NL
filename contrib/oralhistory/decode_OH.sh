@@ -164,7 +164,7 @@ if [ $stage -le 6 ]; then
 
 
     echo "Running decoder, this may take a long time...." | tee -a $logging >&2
-	eval $timer steps/online/nnet3/decode.sh --nj $this_nj --acwt 1.2 --post-decode-acwt 10.0 --skip-scoring true $model/graph_OH $data/ALL $tmp | tee -a $logging >&2 || die "Decoding failed, please see $tmp/decode/log/decode.${this_nj}.log"
+    eval $timer steps/online/nnet3/decode.sh --nj $this_nj --acwt 1.2 --post-decode-acwt 10.0 --skip-scoring true $model/graph_OH $data/ALL $tmp | tee -a $logging >&2 || (echo -e "NNET3 DECODING FAILED! Log follows:\n=============\nNNET 3 DECODE LOG\n=============" >&2 && cat $tmp/decode/log/decode.${this_nj}.log >&2; die "Decoding failed, inspect log above")
 	tail -1 $inter/time.log | awk '{printf( "NNet3 decoding completed in %d:%02d:%02d (CPU: %d:%02d:%02d), Memory used: %d MB                \n", int($1/3600), int($1%3600/60), int($1%3600%60), int(($2+$3)/3600), int(($2+$3)%3600/60), int(($2+$3)%3600%60), $4/1000) }'
 
 	mv -f $tmp ${inter}/decode
