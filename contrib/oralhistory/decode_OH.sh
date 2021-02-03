@@ -259,7 +259,7 @@ if [ $stage -le 9 ] && [ -s $data/ALL/ref.stm ]; then
 			[ $miac ] && ident="$ident$iac."
 			asclite -D -noisg -r $data/ALL/ref.stm stm -h $result/1Best.${ident}ctm ctm $uem -o sgml | tee -a $logging >&2
 			cat $result/1Best.${ident}ctm.sgml | sclite -P -o sum -o pralign -o dtl -n $result/1Best.${ident}ctm  | tee -a $logging >&2
-			[ $(cat $result/1Best.${ident}ctm.sys | grep 'MS\|FS\|MT\|FT' | wc -l) -gt 0 ] && local/split_results.sh $result/1Best.${ident}ctm.sys $result/1Best.${ident}ctm.sys.split
+			[ -e $result/1Best.${ident}ctm.sys ] && [ $(cat $result/1Best.${ident}ctm.sys | grep 'MS\|FS\|MT\|FT' | wc -l) -gt 0 ] && local/split_results.sh $result/1Best.${ident}ctm.sys $result/1Best.${ident}ctm.sys.split
 		done
 	done
 fi
