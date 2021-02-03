@@ -265,4 +265,5 @@ if [ $stage -le 9 ] && [ -s $data/ALL/ref.stm ]; then
 	done
 fi
 
-echo -e "Done" | tee $inter/stage >&2
+echo "Output written to $result/1Best.${ident}ctm and $result/1Best.${ident}txt" >&2
+echo "Done" | tee $inter/stage >&2
