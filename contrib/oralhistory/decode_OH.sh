@@ -140,7 +140,7 @@ fi
 
 ## feature generation
 if [ $stage -le 5 ]; then
-    echo "==========================">&2
+    echo -e "\n==========================">&2
 	echo "Feature generation" | tee $inter/stage >&2
     echo "==========================">&2
 	[ -e $model/mfcc.conf ] && cp $model/mfcc.conf $inter 2>/dev/null
@@ -151,7 +151,7 @@ fi
 
 ## decode
 if [ $stage -le 6 ]; then
-    echo "==========================">&2
+    echo -e "\n==========================">&2
 	echo "Decoding" | tee $inter/stage >&2
     echo "==========================">&2
 	echo -n "Duration of speech: " >&2
@@ -161,13 +161,10 @@ if [ $stage -le 6 ]; then
 	tmp_decode=$result/tmp/ && mkdir -p $tmp_decode
 	tmp=`mktemp -d -p $tmp_decode`
 	cp -r models/AM/conf models/AM/final.mdl models/AM/frame_subsampling_factor $tmp_decode
-	eval $timer steps/online/nnet3/decode.sh --nj $this_nj --acwt 1.2 --post-decode-acwt 10.0 --skip-scoring true $model/graph_OH $data/ALL $tmp | tee -a $logging >&2 &
-	pid=$!
- 	while kill -0 $pid 2>/dev/null; do
- 		linesdone=$(cat $tmp/log/decode.*.log 2>/dev/null | grep "Decoded utterance" | wc -l)
- 		local/progressbar.sh $linesdone $totallines 50 "NNet3 Decoding"
- 		sleep 2
- 	done
+
+
+    echo "Running decoder, this may take a long time...." | tee -a $logging >&2
+	eval $timer steps/online/nnet3/decode.sh --nj $this_nj --acwt 1.2 --post-decode-acwt 10.0 --skip-scoring true $model/graph_OH $data/ALL $tmp | tee -a $logging >&2 || die "Decoding failed, please see $tmp/decode/log/decode.${this_nj}.log"
 	tail -1 $inter/time.log | awk '{printf( "NNet3 decoding completed in %d:%02d:%02d (CPU: %d:%02d:%02d), Memory used: %d MB                \n", int($1/3600), int($1%3600/60), int($1%3600%60), int(($2+$3)/3600), int(($2+$3)%3600/60), int(($2+$3)%3600%60), $4/1000) }'
 
 	mv -f $tmp ${inter}/decode
@@ -177,7 +174,7 @@ fi
 
 ## rescore
 if [ $stage -le 7 ] && [ $llmodel ] && [ -e $inter/decode/num_jobs ]; then
-    echo "==========================">&2
+    echo -e "\n==========================">&2
 	echo "Rescoring" | tee $inter/stage >&2
     echo "==========================">&2
 	numjobs=$(< $inter/decode/num_jobs)
@@ -198,7 +195,7 @@ fi
 
 ## create readable output
 if [ $stage -le 8 ] && [ -e $rescore/num_jobs ]; then
-    echo "==========================">&2
+    echo -e "\n==========================">&2
 	echo -e "Producing output" | tee $inter/stage >&2
     echo "==========================">&2
 
@@ -244,7 +241,7 @@ fi
 
 ## score if reference transcription exists
 if [ $stage -le 9 ] && [ -s $data/ALL/ref.stm ]; then
-    echo "==========================">&2
+    echo -e "\n==========================">&2
 	echo -e "Scoring" | tee $inter/stage >&2
     echo "==========================">&2
 	# score using asclite, then produce alignments and reports using sclite
