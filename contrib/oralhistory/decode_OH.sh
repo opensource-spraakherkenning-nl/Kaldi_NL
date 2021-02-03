@@ -164,9 +164,10 @@ if [ $stage -le 6 ]; then
 
 
     echo "Running decoder, this may take a long time...." | tee -a $logging >&2
+    failed=0
     eval $timer steps/online/nnet3/decode.sh --nj $this_nj --acwt 1.2 --post-decode-acwt 10.0 --skip-scoring true $model/graph_OH $data/ALL $tmp | tee -a $logging >&2 || failed=1  #the return code will usually be 0 even if things go wrong, because a job system may be in the way
 	mv -f $tmp ${inter}/decode
-    if [ ! -e "${inter}/decode/lat.${this_nj}.gz" ] || [ "$failed" -eq 1 ]; then
+    if [ ! -e "${inter}/decode/lat.${this_nj}.gz" ] || [ $failed -eq 1 ]; then
         echo -e "NNET3 DECODING FAILED! Log follows:\n===========================\nNNET 3 DECODE LOG\n=========================" >&2
         cat ${inter}/decode/log/decode.${this_nj}.log >&2
         tail -1 $inter/time.log | awk '{printf( "NNet3 decoding *FAILED* in %d:%02d:%02d (CPU: %d:%02d:%02d), Memory used: %d MB                \n", int($1/3600), int($1%3600/60), int($1%3600%60), int(($2+$3)/3600), int(($2+$3)%3600/60), int(($2+$3)%3600%60), $4/1000) }'
