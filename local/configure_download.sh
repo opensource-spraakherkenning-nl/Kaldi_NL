@@ -23,6 +23,13 @@ if [ ! -e models ]; then
     ln -s -f $modelpack models
 fi
 
+#we need this very ugly patch,
+#creating a symlink back to itself,
+#otherwise certain models break
+if [ ! -e models/Models ]; then
+    ln -s $(realpath models) models/Models
+fi
+
 # get models
 #
 if [ ! -d models/NL ]; then
