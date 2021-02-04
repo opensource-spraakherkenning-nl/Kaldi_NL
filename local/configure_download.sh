@@ -66,3 +66,5 @@ for model in "$@"; do
         exit 2
     fi
 done
+
+chmod -R a+r models/
