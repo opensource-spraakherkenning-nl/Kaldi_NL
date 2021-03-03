@@ -72,6 +72,11 @@ symtab=$lpath/words.txt
 wordbound=$lpath/phones/word_boundary.int
 [ "$llpath" ] && symtab=$llpath/words.txt && wordbound=$llpath/phones/word_boundary.int
 
+die() {
+    echo "ERROR: $@" >&2
+    exit 2
+}
+
 [ -f ./path.sh ] && . ./path.sh; # source the path.
 
 . parse_options.sh || exit 1;
@@ -108,31 +113,32 @@ rescore=$inter/decode
 
 set +a
 
-mkdir -p $inter
+mkdir -p $inter || die "unable to create intermediate directory $inter"
 timer="$(which time)" #This is not the shell's time function but GNU time! needs to be installed explicitly or you get weird errors!
 if [ -z "$timer" ]; then
-    echo "GNU time not found  (apt install time)">&2
-    exit 2
+    die "GNU time not found  (apt install time)"
 fi
 timer="$(which time) -o $inter/time.log -f \"%e %U %S %M\""
-cp "$0" "$inter/decode.sh" 	# Make a copy of this file and..
-echo "$0 $@" >$logging      # ..print the command line for logging
+cp -f "$0" "$inter/decode.sh" || die "error copying decode" 	# Make a copy of this file and..
+echo "Command: $0 $@" | tee $logging >&2     # ..print the command line for logging
 
 ## data prep
 if [ $stage -le 3 ]; then
-	local/decode_prepdata.sh $@
+	local/decode_prepdata.sh $@ || die "Data preparation failed"
 fi
 
 # determine maximum number of jobs for this feature generation and decoding
 numspeak=$(cat $data/ALL/spk2utt | wc -l)
 if (( $numspeak == 0 )); then echo "No speech found, exiting."; exit
-elif (( $nj > $numspeak )); then this_nj=$numspeak; echo "Number of speakers is less than $nj, reducing number of jobs to $this_nj"
+elif (( $nj > $numspeak )); then this_nj=$numspeak; echo "Number of speakers is less than $nj, reducing number of jobs to $this_nj">&2
 else this_nj=$nj
 fi
 
 ## feature generation
 if [ $stage -le 5 ]; then
-	echo "Feature generation" >$inter/stage
+    echo -e "\n==========================">&2
+	echo "Feature generation" | tee $inter/stage >&2
+    echo -e   "==========================">&2
 	[ -e $model/mfcc.conf ] && cp $model/mfcc.conf $inter 2>/dev/null
 	[ -e $model/conf/mfcc.conf ] && cp $model/conf/mfcc.conf $inter 2>/dev/null
 **** INSERT FEATURES ****
@@ -140,8 +146,10 @@ fi
 
 ## decode
 if [ $stage -le 7 ]; then
-	echo "Decoding" >$inter/stage
-	echo -n "Duration of speech: "
+    echo -e "\n==========================">&2
+	echo "Decoding" | tee $inter/stage >&2
+    echo -e   "==========================">&2
+	echo -n "Duration of speech: " >&2
 	cat $data/ALL/segments | awk '{s+=$4-$3} END {printf("%.0f", s)}' | local/convert_time.sh
 	totallines=$(cat $data/ALL/segments | wc -l)
 	rm -r -f ${inter}/decode
@@ -151,9 +159,11 @@ fi
 
 ## rescore
 if [ $stage -le 9 ] && [ $llmodel ] && [ -e $inter/decode/num_jobs ]; then
-	echo "Rescoring" >$inter/stage
+    echo -e "\n==========================">&2
+	echo "Rescoring" | tee $inter/stage >&2
+    echo -e   "==========================">&2
 	numjobs=$(< $inter/decode/num_jobs)
-	eval $timer steps/lmrescore_const_arpa.sh --skip-scoring true $lpath $llpath $data/ALL $inter/decode $inter/rescore >>$logging 2>&1 &
+	eval $timer steps/lmrescore_const_arpa.sh --skip-scoring true $lpath $llpath $data/ALL $inter/decode $inter/rescore | tee -a $logging 2>&1 &
 	pid=$!
 	spin='-\|/'
 	i=0
@@ -183,12 +193,15 @@ fi
 
 ## create readable output
 if [ $stage -le 11 ] && [ -e $rescore/num_jobs ]; then
+    echo -e "\n==========================">&2
 	echo -e "Producing output" >$inter/stage
+    echo -e   "==========================">&2
 
 	frame_shift_opt=
 	rm -f $data/ALL/1Best.* $result/1Best* $rescore/1Best.*
 
 	numjobs=$(< $rescore/num_jobs)
+    [ -z "$numjobs" ] && numjobs=1
 
 	if [ -f $model/frame_shift ]; then
 		frame_shift_opt="--frame-shift=$(cat $model/frame_shift)"
@@ -203,18 +216,19 @@ if [ $stage -le 11 ] && [ -e $rescore/num_jobs ]; then
 			ident=
 			[ $mwip ] && ident="$wip."
 			[ $miac ] && ident="$ident$iac."
-			$cmd --max-jobs-run $nj JOB=1:$numjobs $inter/l2c_log/lat2ctm.${ident}JOB.log \
+			$cmd --max-jobs-run $nj "JOB=1:$numjobs" $inter/l2c_log/lat2ctm.${ident}JOB.log \
 				gunzip -c $rescore/lat.JOB.gz \| \
 				lattice-push ark:- ark:- \| \
 				lattice-add-penalty --word-ins-penalty=$wip ark:- ark:- \| \
 				lattice-align-words $wordbound $model/final.mdl ark:- ark:- \| \
 				lattice-to-ctm-conf $frame_shift_opt --inv-acoustic-scale=$iac ark:- - \| utils/int2sym.pl -f 5 $symtab \| \
 				local/ctm_time_correct.pl $data/ALL/segments \| sort \> $rescore/1Best.${ident}JOB.ctm | exit 1;
-			cat $rescore/1Best.${ident}*.ctm >$rescore/1Best_raw.${ident}ctm
+			cat $rescore/1Best.${ident}*.ctm >$rescore/1Best_raw.${ident}ctm || die "Command produced no viable output: $cmd"
 
 			cat $rescore/1Best_raw.${ident}ctm | sort -k1,1 -k3,3n | local/remove_hyphens.pl | \
 				perl local/combine_numbers.pl | sort -k1,1 -k3,3n | local/compound-restoration.pl 2>>$logging | \
 				grep -E --text -v 'uh|<unk>' >$result/1Best.${ident}ctm
+            [ ! -e "$result/1Best.${ident}ctm" ] && die "Failed to generate expected output $result/1Best.${ident}ctm"
 			[ -s $data/ALL/all.glm ] && mv $result/1Best.${ident}ctm $rescore/1Best_prefilt.${ident}ctm && \
 				cat $rescore/1Best_prefilt.${ident}ctm | csrfilt.sh -s -i ctm -t hyp $data/ALL/all.glm >$result/1Best.${ident}ctm
 
@@ -226,7 +240,9 @@ fi
 
 ## score if reference transcription exists
 if [ $stage -le 13 ] && [ -s $data/ALL/ref.stm ]; then
+    echo -e "\n==========================">&2
 	echo -e "Scoring" >$inter/stage
+    echo -e   "==========================">&2
 	# score using asclite, then produce alignments and reports using sclite
 	[ -s $data/ALL/test.uem ] && uem="-uem $data/ALL/test.uem"
 	for iac in $inv_acoustic_scale; do
@@ -234,12 +250,12 @@ if [ $stage -le 13 ] && [ -s $data/ALL/ref.stm ]; then
 			ident=
 			[ $mwip ] && ident="$wip."
 			[ $miac ] && ident="$ident$iac."
-			asclite -D -noisg -r $data/ALL/ref.stm stm -h $result/1Best.${ident}ctm ctm $uem -o sgml >>$logging 2>&1
-			cat $result/1Best.${ident}ctm.sgml | sclite -P -o sum -o pralign -o dtl -n $result/1Best.${ident}ctm  >>$logging 2>&1
-			[ $(cat $result/1Best.${ident}ctm.sys | grep 'MS\|FS\|MT\|FT' | wc -l) -gt 0 ] && local/split_results.sh $result/1Best.${ident}ctm.sys $result/1Best.${ident}ctm.sys.split
+			asclite -D -noisg -r $data/ALL/ref.stm stm -h $result/1Best.${ident}ctm ctm $uem -o sgml | tee -a $logging >&2
+			cat $result/1Best.${ident}ctm.sgml | sclite -P -o sum -o pralign -o dtl -n $result/1Best.${ident}ctm  | tee -a $logging >&2
+			[ -e $result/1Best.${ident}ctm.sys ] && [ $(cat $result/1Best.${ident}ctm.sys | grep 'MS\|FS\|MT\|FT' | wc -l) -gt 0 ] && local/split_results.sh $result/1Best.${ident}ctm.sys $result/1Best.${ident}ctm.sys.split
 		done
 	done
 fi
 
-echo -e "Done" >$inter/stage
-echo "Done"
+echo "Output written to $result/1Best.${ident}ctm and $result/1Best.${ident}txt" >&2
+echo "Done" | tee $inter/stage >&2

@@ -13,7 +13,7 @@
 #
 
 [ -f ./path.sh ] && . ./path.sh; # source the path.
-[ ! -e decode.sh ] && touch decode.sh 
+[ ! -e decode.sh ] && touch decode.sh
 
 model=
 version=
@@ -34,7 +34,7 @@ myRadioDialog () {
 	selected=
 	list=
 	i=1
-	
+
 	# add numbers & remove unwanted versions
 	for mem in $3; do
 		[ $auto_latest -eq 1 ] && [[ $mem == v* ]] && continue
@@ -55,11 +55,11 @@ myRadioDialog () {
 			return_value=$?
 		done
 	fi
-	
+
 	echo $selected
 	if [ $return_value -eq 0 ]; then
 		returnval="${selecteda[ $(( (($selected-1)*3)+1 )) ]}"
-	else 
+	else
 		echo "Cancelled"
 		exit
 	fi
@@ -155,9 +155,9 @@ dialog --stdout --yesno "Confirm your choices:\n\nAcoustic Model:\n${model}\n\nL
 ##
 ## Generate graphs
 ##
-if [ ! -d $lmodelpath/LG_${LGpath} ]; then 
+if [ ! -d $lmodelpath/LG_${LGpath} ]; then
 	dialog --backtitle "Graph Generation" --infobox "Creating Decode Graph, This May Take A While \n\nCreating LG" 8 30
-	mkdir $lmodelpath/LG_${LGpath}	
+	mkdir $lmodelpath/LG_${LGpath}
 	cp $model/../../../phones.txt $lmodelpath/LG_${LGpath}/
 	local/Arpa2LG.sh $lmodel $lexicon $lmodelpath/LG_${LGpath} >>configure.log 2>&1
 fi
@@ -174,7 +174,7 @@ if [ "$llmodel" ]; then
 	constLMpath="$lmodelpath/LG_${LGpath}/Const_${constLMpath}_${LLM}"
 	if [ ! -d ${constLMpath} ]; then
 		dialog --backtitle "Const LM Generation" --infobox "Creating ConstLM for rescore, This May Take A While \n\nCreating ConstLM" 8 30
-		utils/build_const_arpa_lm.sh $llmodel $lmodelpath/LG_${LGpath}/lang $constLMpath >>configure.log 2>&1 || exit 1;	
+		utils/build_const_arpa_lm.sh $llmodel $lmodelpath/LG_${LGpath}/lang $constLMpath >>configure.log 2>&1 || exit 1;
 	fi
 fi
 
@@ -184,14 +184,14 @@ fi
 dialog --backtitle "Decode.sh Generation" --infobox "Creating Decode.sh" 3 30
 mv -f decode.sh decode.last.sh 2>/dev/null
 cat local/decode_template | sed -n '/^#$/{:a;n;/^\*\*\*\* INSERT DECODE_OPTIONS \*\*\*\*/b;p;ba}' >decode.sh
-echo "model=$model" >>decode.sh 
-echo "lexicon='${lexiconlit}'" >>decode.sh 
+echo "model=$model" >>decode.sh
+echo "lexicon='${lexiconlit}'" >>decode.sh
 echo "lmodel=$lmodel" >>decode.sh
-echo "lpath=$lmodelpath/LG_${LGpath}" >>decode.sh 
+echo "lpath=$lmodelpath/LG_${LGpath}" >>decode.sh
 echo "llmodel=$llmodel" >>decode.sh
-echo "llpath=$constLMpath" >>decode.sh 
-echo "extractor=$extractor" >>decode.sh 
-echo >>decode.sh 
+echo "llpath=$constLMpath" >>decode.sh
+echo "extractor=$extractor" >>decode.sh
+echo >>decode.sh
 
 cat ${model}/*.info | sed -n '/\[Decode_options\]/{:a;n;/^\[/q;p;ba}' >>decode.sh
 cat local/decode_template | sed -n '/^\*\*\*\* INSERT DECODE_OPTIONS \*\*\*\*/{:a;n;/^\*\*\*\* INSERT FEATURES \*\*\*\*/b;p;ba}' >>decode.sh
@@ -204,7 +204,7 @@ cat ${model}/*.info | \
 	sed 's/--nj/--nj $this_nj/' | \
 	sed 's/--mfcc-config/--mfcc-config $inter\/mfcc.conf/' | \
 	sed 's/ mfcc/ $inter\/mfcc/'| \
-	sed -r 's/^(\W*steps.*)$/\1 >>$logging 2>\&1/' >>decode.sh
+	sed -r 's/^(\W*steps.*)$/\1 | tee -a $logging >\&2/' >>decode.sh
 cat local/decode_template | sed -n '/^\*\*\*\* INSERT FEATURES \*\*\*\*/{:a;n;/^\*\*\*\* INSERT DECODE \*\*\*\*/b;p;ba}' >>decode.sh
 
 cat ${model}/*.info | \
@@ -216,14 +216,14 @@ cat ${model}/*.info | \
 	sed 's%\[extractor\]%$extractor%g' | \
 	sed 's/--nj/--nj $this_nj --beam $beam/' | \
 	sed -r 's%\[out\]%${inter}/decode%' | \
-	sed -r 's/^(\W*steps\/.*)$/\1 >>$logging 2>\&1/' | \
-	sed -r 's/^(\W*eval \$timer steps\/.*)$/\1 >>$logging 2>\&1 \&/' >>decode.sh
+	sed -r 's/^(\W*steps\/.*)$/\1 | tee -a $logging >\&2/' | \
+	sed -r 's/^(\W*eval \$timer steps\/.*)$/\1 | tee -a $logging >\&2 \&/' >>decode.sh
 
 cat local/decode_template | sed -n '/^\*\*\*\* INSERT DECODE \*\*\*\*/{:a;n;/^\*\*\*\* INSERT RESCORE \*\*\*\*/b;p;ba}' >>decode.sh
 
 chmod +x decode.sh
 
-## 
+##
 ## Fix ivector_extractor.conf
 ##
 
@@ -237,11 +237,11 @@ if [ -e ${model}/conf/ivector_extractor.conf ]; then
 		sed "s%--global-cmvn-stats.*%--global-cmvn-stats=${modeldir}/ivector_extractor/global_cmvn.stats%" | \
 		sed "s%--diag-ubm.*%--diag-ubm=${modeldir}/ivector_extractor/final.dubm%" | \
 		sed "s%--ivector-extractor.*%--ivector-extractor=${modeldir}/ivector_extractor/final.ie%" >${model}/conf/ivector_extractor.conf
-	[ -e ${model}/conf/online_nnet2_decoding.conf ] && \ 
+	[ -e ${model}/conf/online_nnet2_decoding.conf ] && \
 		mv ${model}/conf/online_nnet2_decoding.conf ${model}/conf/online_nnet2_decoding.conf.orig && \
 		cp ${model}/conf/online_nnet2_decoding.conf.orig ${model}/conf/online.conf.orig
-	
-	[ -e ${model}/conf/online.conf ] && mv ${model}/conf/online.conf ${model}/conf/online.conf.orig	
+
+	[ -e ${model}/conf/online.conf ] && mv ${model}/conf/online.conf ${model}/conf/online.conf.orig
 	cat ${model}/conf/online.conf.orig | \
 		sed "s%--mfcc-config.*%--mfcc-config=${modeldir}/conf/mfcc.conf%" | \
 		sed "s%--ivector-extraction-config.*%--ivector-extraction-config=${modeldir}/conf/ivector_extractor.conf%" >${model}/conf/online.conf
