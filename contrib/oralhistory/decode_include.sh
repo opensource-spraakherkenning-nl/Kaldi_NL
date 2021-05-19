@@ -47,6 +47,7 @@
 # shellcheck disable=SC2002
 # ^-- allow the use of cat file | cmd   (rather than cmd < file)
 
+# auto-export all variables
 set -a
 
 die() {
@@ -76,10 +77,15 @@ die() {
 [ -n "$model" ] && die "This script must be sourced, missing: \$model"
 [ -n "$graph" ] && graph="$model/graph"
 [ -n "$lmodel" ] && die "This script must be sourced, missing: \$lmodel"
+[ -n "$llmodel" ] && die "This script must be sourced, missing: \$llmodel"   #this variable does not exist in the decode_template
 [ -n "$lpath" ] && die "This script must be sourced, missing: \$lpath"
 [ -n "$llpath" ] && die "This script must be sourced, missing: \$llpath"
 [ -n "$symtab" ] && die "This script must be sourced, missing: \$symtab"
 [ -n "$wordbound" ] && die "This script must be sourced, missing: \$wordbound"
+
+symtab="$lpath/words.txt"
+wordbound="$lpath/phones/word_boundary.int"
+[ -e "$llpath" ] && symtab="$llpath/words.txt" && wordbound="$llpath/phones/word_boundary.int"
 
 # shellcheck disable=SC1091
 [ -f ./path.sh ] && . ./path.sh; # source the path.
@@ -122,6 +128,7 @@ rescore=$inter/decode
 [ "$(echo "$inv_acoustic_scale" | wc -w)" -gt 1 ] && miac=true
 [ "$(echo "$word_ins_penalty" | wc -w)" -gt 1 ] && mwip=true
 
+# stop auto-exporting all variables
 set +a
 
 mkdir -p $inter || die "unable to create intermediate directory $inter"
@@ -207,7 +214,7 @@ if [ $stage -le 7 ] && [ -e "$llmodel" ] && [ -e "$inter/decode/num_jobs" ]; the
 	rescore="$inter/rescore"
 fi
 
-[ "$llmodel" ] && rescore="$inter/rescore"
+[ -e "$llmodel" ] && rescore="$inter/rescore"
 
 ## create readable output
 if [ $stage -le 8 ] && [ -e "$rescore/num_jobs" ]; then

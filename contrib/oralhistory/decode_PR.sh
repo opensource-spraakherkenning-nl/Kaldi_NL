@@ -74,10 +74,7 @@ llpath=models/LM/Const_PR
 extractor=
 
 
-
-symtab=$lpath/words.txt
-wordbound=$lpath/phones/word_boundary.int
-[ "$llpath" ] && symtab=$llpath/words.txt && wordbound=$llpath/phones/word_boundary.int
+set +a
 
 include_path="$(dirname "$(readlink -f "$0")")"
 source "$include_path/decode_include.sh"
