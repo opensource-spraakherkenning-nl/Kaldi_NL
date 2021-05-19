@@ -44,13 +44,16 @@
 #			found in <output-dir>/1Best.ctm.{dtl,pra,sys}
 #
 
+# shellcheck disable=SC2002
+# ^-- allow the use of cat file | cmd   (rather than cmd < file)
+
 set -a
 
 die() {
 	echo "-------------------------------------------------" >&2
-    echo "ERROR: $@" >&2
+    echo "ERROR: $*" >&2
 	echo "-------------------------------------------------" >&2
-	[ ! -n "$logging" ] && echo "(you can inspect the log at $logging for details)" >&2
+	[ -z "$logging" ] || echo "(you can inspect the log at $logging for details)" >&2
     exit 2
 }
 
@@ -78,28 +81,30 @@ die() {
 [ -n "$symtab" ] && die "This script must be sourced, missing: \$symtab"
 [ -n "$wordbound" ] && die "This script must be sourced, missing: \$wordbound"
 
+# shellcheck disable=SC1091
 [ -f ./path.sh ] && . ./path.sh; # source the path.
 
+# shellcheck disable=SC1091
 . parse_options.sh || exit 1;
 
 if [ $# -lt 2 ]; then
-    echo "Wrong #arguments ($#, expected 2)"
-    echo "Usage: decode.sh [options] <source-dir|source files|txt-file list of source files> <decode-dir>"
-    echo "  "
-    echo "main options (for others, see top of script file)"
-    echo "  --config <config-file>             # config containing options"
-    echo "  --nj <nj>                          # maximum number of parallel jobs"
-    echo "  --cmd <cmd>                        # Command to run in parallel with"
-	if [ ! -z ${acwt+x} ]; then
-    	echo "  --acwt <acoustic-weight>                 # value is ${acwt} ... used to get posteriors"
-    fi
-    echo "  --inv-acoustic-scale               # used for 1-best and N-best generation, may have multiple values, value is $inv_acoustic_scale"
-    echo "  --word-ins-penalty                 # used for 1-best generation, may have multiple values, value is $word_ins_penalty"
-    echo "  --num-threads <n>                  # number of threads to use, value is 1."
-    echo "  --file-types <extensions>          # include audio files with the given extensions, default \"wav mp3\" "
-    echo "  --copyall <true/false>             # copy all source files (true) or use symlinks (false), value is $copyall"
-    echo "  --splittext <true/false>           # split resulting 1Best.txt into separate .txt files for each input file, value is $splittext"
-    exit 1;
+	echo "Wrong #arguments ($#, expected 2)"
+	echo "Usage: decode.sh [options] <source-dir|source files|txt-file list of source files> <decode-dir>"
+	echo "  "
+	echo "main options (for others, see top of script file)"
+	echo "  --config <config-file>             # config containing options"
+	echo "  --nj <nj>                          # maximum number of parallel jobs"
+	echo "  --cmd <cmd>                        # Command to run in parallel with"
+	if [ -n "${acwt}" ]; then
+		echo "  --acwt <acoustic-weight>                 # value is ${acwt} ... used to get posteriors"
+	fi
+	echo "  --inv-acoustic-scale               # used for 1-best and N-best generation, may have multiple values, value is $inv_acoustic_scale"
+	echo "  --word-ins-penalty                 # used for 1-best generation, may have multiple values, value is $word_ins_penalty"
+	echo "  --num-threads <n>                  # number of threads to use, value is 1."
+	echo "  --file-types <extensions>          # include audio files with the given extensions, default \"wav mp3\" "
+	echo "  --copyall <true/false>             # copy all source files (true) or use symlinks (false), value is $copyall"
+	echo "  --splittext <true/false>           # split resulting 1Best.txt into separate .txt files for each input file, value is $splittext"
+	exit 1;
 fi
 
 result=${!#}
@@ -114,8 +119,8 @@ data="${inter}/data"
 logging="${inter}/log"
 rescore=$inter/decode
 
-[ `echo $inv_acoustic_scale | wc -w` -gt 1 ] && miac=true
-[ `echo $word_ins_penalty | wc -w` -gt 1 ] && mwip=true
+[ "$(echo "$inv_acoustic_scale" | wc -w)" -gt 1 ] && miac=true
+[ "$(echo "$word_ins_penalty" | wc -w)" -gt 1 ] && mwip=true
 
 set +a
 
@@ -125,57 +130,56 @@ if [ -z "$timer" ]; then
     die "GNU time not found  (apt install time)"
 fi
 timer="$timer -o $inter/time.log -f \"%e %U %S %M\""
-scriptname="$(dirname $(readlink -f "$0"))" #the invoked script
-includescriptname="$(dirname $(readlink -f "$BASH_SOURCE"))" #this sources script
+scriptname="$(dirname "$(readlink -f "$0")")" #the invoked script
+includescriptname="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" #this sources script
 cp -f "$scriptname" "$inter/decode.sh" || die "error copying decode.sh ($scriptname)"		# Make a copy of this file and..
 cp -f "$includescriptname" "$inter/decode_include.sh" || die "error copying decode_include.sh ($includescriptname)"		# Make a copy of this file and..
-echo "Command: $0 $@" | tee "$logging" >&2      # ..print the command line for logging
+echo "Command: $0 $*" | tee "$logging" >&2      # ..print the command line for logging
 
 ## data prep
 if [ $stage -le 3 ]; then
-	local/decode_prepdata.sh $@ || die "Data preparation failed"
+	local/decode_prepdata.sh "$@" || die "Data preparation failed"
 fi
 
 # determine maximum number of jobs for this feature generation and decoding
 numspeak=$(cat $data/ALL/spk2utt | wc -l)
-if (( $numspeak == 0 )); then die "No speech found, exiting."
-elif (( $nj > $numspeak )); then this_nj=$numspeak; echo "Number of speakers is less than $nj, reducing number of jobs to $this_nj" >&2
+if (( numspeak == 0 )); then die "No speech found, exiting."
+elif (( nj > numspeak )); then this_nj=$numspeak; echo "Number of speakers is less than $nj, reducing number of jobs to $this_nj" >&2
 else this_nj=$nj
 fi
 
 ## feature generation
 if [ $stage -le 5 ]; then
 	echo -e "\n==========================">&2
-	echo "Feature generation" | tee $inter/stage >&2
+	echo "Feature generation" | tee "$inter/stage" >&2
 	echo "==========================">&2
-	[ -e $model/mfcc.conf ] && cp $model/mfcc.conf $inter 2>/dev/null
-	[ -e $model/conf/mfcc.conf ] && cp $model/conf/mfcc.conf $inter 2>/dev/null
-	steps/make_mfcc.sh --nj $this_nj --mfcc-config $inter/mfcc.conf $data/ALL $data/ALL/log $inter/mfcc | tee -a $logging >&2
-	steps/compute_cmvn_stats.sh $data/ALL $data/ALL/log $inter/mfcc | tee -a $logging >&2
+	[ -e "$model/mfcc.conf" ] && cp "$model/mfcc.conf" "$inter" 2>/dev/null
+	[ -e "$model/conf/mfcc.conf" ] && cp "$model/conf/mfcc.conf" "$inter" 2>/dev/null
+	steps/make_mfcc.sh --nj "$this_nj" --mfcc-config "$inter/mfcc.conf" "$data/ALL" "$data/ALL/log" "$inter/mfcc" 2>&1 | tee -a $logging >&2
+	steps/compute_cmvn_stats.sh "$data/ALL" "$data/ALL/log" "$inter/mfcc" 2>&1 | tee -a "$logging" >&2
 fi
 
 ## decode
 if [ $stage -le 6 ]; then
 	echo -e "\n==========================">&2
-	echo "Decoding" | tee $inter/stage >&2
+	echo "Decoding" | tee "$inter/stage" >&2
 	echo "==========================">&2
 	echo -n "Duration of speech: " >&2
-	cat $data/ALL/segments | awk '{s+=$4-$3} END {printf("%.0f", s)}' | local/convert_time.sh
-	totallines=$(cat $data/ALL/segments | wc -l)
-	rm -r -f ${inter}/decode
-	tmp_decode=$result/tmp/ && mkdir -p $tmp_decode
-	tmp=`mktemp -d -p $tmp_decode`
-	cp -r models/AM/conf models/AM/final.mdl models/AM/frame_subsampling_factor $tmp_decode
+	cat "$data/ALL/segments" | awk '{s+=$4-$3} END {printf("%.0f", s)}' | local/convert_time.sh
+	rm -r -f "${inter}/decode"
+	tmp_decode=$result/tmp/ && mkdir -p "$tmp_decode"
+    tmp=$(mktemp -d -p "$tmp_decode")
+	cp -r models/AM/conf models/AM/final.mdl models/AM/frame_subsampling_factor "$tmp_decode"
 
 
 	echo "Running decoder, this may take a long time...." | tee -a $logging >&2
 	failed=0
-	eval $timer steps/online/nnet3/decode.sh --nj $this_nj --acwt 1.2 --post-decode-acwt 10.0 --skip-scoring true $graph $data/ALL $tmp | tee -a $logging >&2 || failed=1  #the return code will usually be 0 even if things go wrong, because a job system may be in the way
-	mv -f $tmp ${inter}/decode
+	eval "$timer" steps/online/nnet3/decode.sh --nj "$this_nj" --acwt 1.2 --post-decode-acwt 10.0 --skip-scoring true "$graph" "$data/ALL" "$tmp" | tee -a "$logging" >&2 || failed=1  #the return code will usually be 0 even if things go wrong, because a job system may be in the way
+	mv -f "$tmp" "${inter}/decode"
 	if [ ! -e "${inter}/decode/lat.${this_nj}.gz" ] || [ $failed -eq 1 ]; then
 		echo -e "NNET3 DECODING FAILED! Log follows:\n===========================\nNNET 3 DECODE LOG\n=========================" >&2
-		cat ${inter}/decode/log/decode.${this_nj}.log >&2
-		tail -1 $inter/time.log | awk '{printf( "NNet3 decoding *FAILED* in %d:%02d:%02d (CPU: %d:%02d:%02d), Memory used: %d MB                \n", int($1/3600), int($1%3600/60), int($1%3600%60), int(($2+$3)/3600), int(($2+$3)%3600/60), int(($2+$3)%3600%60), $4/1000) }'
+		cat "${inter}/decode/log/decode.${this_nj}.log" >&2
+		tail -1 "$inter/time.log" | awk '{printf( "NNet3 decoding *FAILED* in %d:%02d:%02d (CPU: %d:%02d:%02d), Memory used: %d MB                \n", int($1/3600), int($1%3600/60), int($1%3600%60), int(($2+$3)/3600), int(($2+$3)%3600/60), int(($2+$3)%3600%60), $4/1000) }'
 		die "Decoding failed, inspect decode log above"
 	fi
 	tail -1 $inter/time.log | awk '{printf( "NNet3 decoding completed in %d:%02d:%02d (CPU: %d:%02d:%02d), Memory used: %d MB                \n", int($1/3600), int($1%3600/60), int($1%3600%60), int(($2+$3)/3600), int(($2+$3)%3600/60), int(($2+$3)%3600%60), $4/1000) }'
@@ -185,42 +189,42 @@ if [ $stage -le 6 ]; then
 fi
 
 ## rescore
-if [ $stage -le 7 ] && [ $llmodel ] && [ -e $inter/decode/num_jobs ]; then
+if [ $stage -le 7 ] && [ -e "$llmodel" ] && [ -e "$inter/decode/num_jobs" ]; then
 	echo -e "\n==========================">&2
-	echo "Rescoring" | tee $inter/stage >&2
+	echo "Rescoring" | tee "$inter/stage" >&2
 	echo "==========================">&2
 	numjobs=$(< $inter/decode/num_jobs)
-	eval $timer steps/lmrescore_const_arpa.sh --skip-scoring true $lpath $llpath $data/ALL $inter/decode $inter/rescore | tee -a $logging 2>&1 &
+	eval "$timer" steps/lmrescore_const_arpa.sh --skip-scoring true "$lpath" "$llpath" "$data/ALL" "$inter/decode" "$inter/rescore" | tee -a "$logging" 2>&1 &
 	pid=$!
 	spin='-\|/'
 	i=0
 	while kill -0 $pid 2>/dev/null; do
 		i=$(( (i+1) %4 ))
-		printf "\rRescoring.. ${spin:$i:1}"
+		printf "\rRescoring.. %s" "${spin:$i:1}"
 		sleep .2
 	done
-	cat $inter/time.log | awk '{printf("\rRescoring completed in %d:%02d:%02d (CPU: %d:%02d:%02d), Memory used: %d MB                \n", int($1/3600), int($1%3600/60), int($1%3600%60), int(($2+$3)/3600), int(($2+$3)%3600/60), int(($2+$3)%3600%60), $4/1000) }'
-	rescore=$inter/rescore
+	cat "$inter/time.log"| awk '{printf("\rRescoring completed in %d:%02d:%02d (CPU: %d:%02d:%02d), Memory used: %d MB                \n", int($1/3600), int($1%3600/60), int($1%3600%60), int(($2+$3)/3600), int(($2+$3)%3600/60), int(($2+$3)%3600%60), $4/1000) }'
+	rescore="$inter/rescore"
 fi
 
-[ $llmodel ] && rescore=$inter/rescore
+[ "$llmodel" ] && rescore="$inter/rescore"
 
 ## create readable output
-if [ $stage -le 8 ] && [ -e $rescore/num_jobs ]; then
+if [ $stage -le 8 ] && [ -e "$rescore/num_jobs" ]; then
 	echo -e "\n==========================">&2
 	echo -e "Producing output" | tee $inter/stage >&2
 	echo "==========================">&2
 
 	frame_shift_opt=
-	rm -f $data/ALL/1Best.* $result/1Best* $rescore/1Best.*
+	rm -f "$data"/ALL/1Best.* "$result"/1Best* "$rescore"/1Best.*
 
 	numjobs=$(< $rescore/num_jobs)
 	[ -z "$numjobs" ] && numjobs=1
 
-	if [ -f $model/frame_shift ]; then
-		frame_shift_opt="--frame-shift=$(cat $model/frame_shift)"
-	elif [ -f $model/frame_subsampling_factor ]; then
-		factor=$(cat $model/frame_subsampling_factor) || exit 1
+	if [ -f "$model/frame_shift" ]; then
+		frame_shift_opt="--frame-shift=$(cat "$model/frame_shift")"
+	elif [ -f "$model/frame_subsampling_factor" ]; then
+		factor=$(cat "$model/frame_subsampling_factor") || exit 1
 		frame_shift_opt="--frame-shift=0.0$factor"
 	fi
 
@@ -230,42 +234,42 @@ if [ $stage -le 8 ] && [ -e $rescore/num_jobs ]; then
 			ident=
 			[ $mwip ] && ident="$wip."
 			[ $miac ] && ident="$ident$iac."
-			$cmd --max-jobs-run $nj "JOB=1:$numjobs" $inter/l2c_log/lat2ctm.${ident}JOB.log \
+			$cmd --max-jobs-run $nj "JOB=1:$numjobs" "$inter/l2c_log/lat2ctm.${ident}JOB.log" \
 				gunzip -c $rescore/lat.JOB.gz \| \
 				lattice-push ark:- ark:- \| \
 				lattice-add-penalty --word-ins-penalty=$wip ark:- ark:- \| \
-				lattice-align-words $wordbound $model/final.mdl ark:- ark:- \| \
-				lattice-to-ctm-conf $frame_shift_opt --inv-acoustic-scale=$iac ark:- - \| utils/int2sym.pl -f 5 $symtab \| \
+				lattice-align-words "$wordbound" "$model/final.mdl" ark:- ark:- \| \
+				lattice-to-ctm-conf "$frame_shift_opt" --inv-acoustic-scale=$iac ark:- - \| utils/int2sym.pl -f 5 "$symtab" \| \
 				local/ctm_time_correct.pl $data/ALL/segments \| sort \> $rescore/1Best.${ident}JOB.ctm | exit 1;
 			cat $rescore/1Best.${ident}*.ctm >$rescore/1Best_raw.${ident}ctm || die "Command produced no viable output: $cmd"
 
 			cat $rescore/1Best_raw.${ident}ctm | sort -k1,1 -k3,3n | local/remove_hyphens.pl | \
 				perl local/combine_numbers.pl | sort -k1,1 -k3,3n | local/compound-restoration.pl 2>>$logging | \
-				grep -E --text -v 'uh|<unk>' >$result/1Best.${ident}ctm
+				grep -E --text -v 'uh|<unk>' >$result/1Best.${ident}ctm || die "Postprocesing raw CTM into final CTM failed"
             [ ! -e "$result/1Best.${ident}ctm" ] && die "Failed to generate expected output $result/1Best.${ident}ctm"
 			[ -s $data/ALL/all.glm ] && mv $result/1Best.${ident}ctm $rescore/1Best_prefilt.${ident}ctm && \
-				cat $rescore/1Best_prefilt.${ident}ctm | csrfilt.sh -s -i ctm -t hyp $data/ALL/all.glm >$result/1Best.${ident}ctm
+                (cat $rescore/1Best_prefilt.${ident}ctm | csrfilt.sh -s -i ctm -t hyp "$data/ALL/all.glm" >"$result/1Best.${ident}ctm" 2>&1 | tee -a $logging >&2 || die "Filtering 1Best.ctm failed (csrfilt.sh)")
 
-			local/ctmseg2sent.pl $result $splittext $ident || die "ctmseg2sent failed"
+			local/ctmseg2sent.pl "$result" "$splittext" "$ident" 2>&1 | tee -a $logging >&2 || die "ctmseg2sent failed"
 		done
 	done
 fi
 
 ## score if reference transcription exists
-if [ $stage -le 9 ] && [ -s $data/ALL/ref.stm ]; then
+if [ $stage -le 9 ] && [ -s "$data/ALL/ref.stm" ]; then
 	echo -e "\n==========================">&2
 	echo -e "Scoring" | tee $inter/stage >&2
 	echo "==========================">&2
 	# score using asclite, then produce alignments and reports using sclite
-	[ -s $data/ALL/test.uem ] && uem="-uem $data/ALL/test.uem"
+	[ -s "$data/ALL/test.uem" ] && uem="-uem $data/ALL/test.uem"
 	for iac in $inv_acoustic_scale; do
 		for wip in $word_ins_penalty; do
 			ident=
 			[ $mwip ] && ident="$wip."
 			[ $miac ] && ident="$ident$iac."
-			asclite -D -noisg -r $data/ALL/ref.stm stm -h $result/1Best.${ident}ctm ctm $uem -o sgml | tee -a $logging >&2
-			cat $result/1Best.${ident}ctm.sgml | sclite -P -o sum -o pralign -o dtl -n $result/1Best.${ident}ctm  | tee -a $logging >&2
-			[ -e $result/1Best.${ident}ctm.sys ] && [ $(cat $result/1Best.${ident}ctm.sys | grep 'MS\|FS\|MT\|FT' | wc -l) -gt 0 ] && local/split_results.sh $result/1Best.${ident}ctm.sys $result/1Best.${ident}ctm.sys.split
+			asclite -D -noisg -r "$data/ALL/ref.stm" stm -h "$result/1Best.${ident}ctm" ctm "$uem" -o sgml 2>&1 | tee -a "$logging" >&2
+			cat "$result/1Best.${ident}ctm.sgml" | sclite -P -o sum -o pralign -o dtl -n $result/1Best.${ident}ctm 2>&1  | tee -a "$logging" >&2
+			[ -e "$result/1Best.${ident}ctm.sys" ] && [ "$(cat "$result/1Best.${ident}ctm.sys" | grep -c 'MS\|FS\|MT\|FT')" -gt 0 ] && local/split_results.sh "$result/1Best.${ident}ctm.sys" "$result/1Best.${ident}ctm.sys.split"
 		done
 	done
 
@@ -283,12 +287,12 @@ fi
 if [ -z "$mwip" ] && [ -z "$miac" ]; then
 	#these parts of the pipeline only work when idents are not used (mwip/miac are unset)
 
-	if [ ! -f $results/1Best.ctm ]; then
+	if [ ! -f "$result/1Best.ctm" ]; then
 		die "Expected output file $result/1Best.ctm not found after decoding!"
 	fi
 
 	## convert to XML if output exists
-	if [ $stage -le 10 ] && [ -s $result/1Best.ctm ] && [ -x ./scripts/ctm2xml.py ];
+	if [ $stage -le 10 ] && [ -s "$result/1Best.ctm" ] && [ -x ./scripts/ctm2xml.py ];
 	then
 		echo -e "\n==========================">&2
 		echo -e "Conversion to XML" | tee $inter/stage >&2
@@ -298,7 +302,7 @@ if [ -z "$mwip" ] && [ -z "$miac" ]; then
 	fi
 
 	## process speaker diarisation output
-	if [ $stage -le 11 ] && [ -s $result/liumlog/1Best.seg ] && [ -x ./scripts/addspkctm.py ];
+	if [ $stage -le 11 ] && [ -s "$result/liumlog/1Best.seg" ] && [ -x ./scripts/addspkctm.py ];
 	then
 		echo -e "\n==========================">&2
 		echo -e "Processing speaker diarisation output" | tee $inter/stage >&2
@@ -314,13 +318,13 @@ if [ -z "$mwip" ] && [ -z "$miac" ]; then
 		./scripts/addspkctm.py "$result/1Best.rttm" "$result/1Best.ctm" || die "Failure adding speakers to CTM"
 	fi
 
-	if [ $stage -le 12 ] && [ -s $result/liumlog/1Best.seg ] && [ -x ./scripts/wordpausestatistic.perl ]; then
+	if [ $stage -le 12 ] && [ -s "$result/liumlog/1Best.seg" ] && [ -x ./scripts/wordpausestatistic.perl ]; then
 		echo -e "\n==========================">&2
 		echo -e "Adding sentence boundaries" | tee $inter/stage >&2
 		echo "==========================">&2
 
 		# Add sentence boundaries
-		cat $result/1Best.ctm | perl scripts/wordpausestatistic.perl 1.0 "$result/1Best.sent" || die "Failure adding sentence boundaries"
+		cat "$result/1Best.ctm" | perl scripts/wordpausestatistic.perl 1.0 "$result/1Best.sent" || die "Failure adding sentence boundaries"
 	fi
 
 fi
