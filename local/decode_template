@@ -89,6 +89,11 @@ symtab="$lpath/words.txt"
 wordbound="$lpath/phones/word_boundary.int"
 [ -e "$llpath" ] && symtab="$llpath/words.txt" && wordbound="$llpath/phones/word_boundary.int"
 
+die() {
+    echo "ERROR: $@" >&2
+    exit 2
+}
+
 [ -f ./path.sh ] && . ./path.sh; # source the path.
 
 . parse_options.sh || exit 1;
