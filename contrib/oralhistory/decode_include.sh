@@ -50,6 +50,9 @@
 # auto-export all variables
 set -a
 
+# exit a pipeline with a non-zero exit code if any part of it fails
+set -o pipefail
+
 die() {
 	echo "-------------------------------------------------" >&2
 	echo "ERROR: $*" >&2
