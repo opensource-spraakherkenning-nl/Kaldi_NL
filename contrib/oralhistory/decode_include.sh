@@ -135,8 +135,8 @@ if [ -z "$timer" ]; then
     die "GNU time not found  (apt install time)"
 fi
 timer="$timer -o $inter/time.log -f \"%e %U %S %M\""
-scriptname="$(dirname "$(readlink -f "$0")")" #the invoked script
-includescriptname="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" #this sources script
+scriptname="$(readlink -f "$0")" #the invoked script
+includescriptname="$(readlink -f "${BASH_SOURCE[0]}")" #this sources script
 cp -f "$scriptname" "$inter/decode.sh" || die "error copying decode.sh ($scriptname)"		# Make a copy of this file and..
 cp -f "$includescriptname" "$inter/decode_include.sh" || die "error copying decode_include.sh ($includescriptname)"		# Make a copy of this file and..
 echo "Command: $0 $*" | tee "$logging" >&2      # ..print the command line for logging
