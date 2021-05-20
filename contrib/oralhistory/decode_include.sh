@@ -143,6 +143,9 @@ echo "Command: $0 $*" | tee "$logging" >&2      # ..print the command line for l
 
 ## data prep
 if [ $stage -le 3 ]; then
+	echo -e "\n==========================">&2
+	echo "Data Prepeparation" | tee "$inter/stage" >&2
+	echo "==========================">&2
 	local/decode_prepdata.sh "$@" || die "Data preparation failed"
 fi
 
@@ -160,8 +163,8 @@ if [ $stage -le 5 ]; then
 	echo "==========================">&2
 	[ -e "$model/mfcc.conf" ] && cp "$model/mfcc.conf" "$inter" 2>/dev/null
 	[ -e "$model/conf/mfcc.conf" ] && cp "$model/conf/mfcc.conf" "$inter" 2>/dev/null
-	steps/make_mfcc.sh --nj "$this_nj" --mfcc-config "$inter/mfcc.conf" "$data/ALL" "$data/ALL/log" "$inter/mfcc" 2>&1 | tee -a $logging >&2
-	steps/compute_cmvn_stats.sh "$data/ALL" "$data/ALL/log" "$inter/mfcc" 2>&1 | tee -a "$logging" >&2
+	steps/make_mfcc.sh --nj "$this_nj" --mfcc-config "$inter/mfcc.conf" "$data/ALL" "$data/ALL/log" "$inter/mfcc" 2>&1 | tee -a $logging >&2 || die "feature generation failed"
+	steps/compute_cmvn_stats.sh "$data/ALL" "$data/ALL/log" "$inter/mfcc" 2>&1 | tee -a "$logging" >&2 || die "compute CMVN stats failed"
 fi
 
 ## decode
