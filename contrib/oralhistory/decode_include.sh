@@ -52,10 +52,27 @@ set -a
 
 die() {
 	echo "-------------------------------------------------" >&2
-    echo "ERROR: $*" >&2
+	echo "ERROR: $*" >&2
 	echo "-------------------------------------------------" >&2
-	[ -z "$logging" ] || echo "(you can inspect the log at $logging for details)" >&2
-    exit 2
+	[ -n "$logging" ] && echo "(you can inspect the log at $logging for details)" >&2
+	exit 2
+}
+
+log() {
+	if [ -n "$logging" ]; then
+		echo -e "$*" | tee -a "$logging" >&2
+	else
+		echo -e "$*" >&2
+	fi
+}
+
+logtitle() {
+	log "\n==========================">&2
+	if [ -n "$inter" ]; then
+		echo "$@" > "$inter/stage"
+	fi
+	log "$@"
+	log "\n==========================">&2
 }
 
 [ -n "$cmd" ] || cmd="run.pl"
@@ -140,6 +157,7 @@ includescriptname="$(readlink -f "${BASH_SOURCE[0]}")" #this sources script
 cp -f "$scriptname" "$inter/decode.sh" || die "error copying decode.sh ($scriptname)"		# Make a copy of this file and..
 cp -f "$includescriptname" "$inter/decode_include.sh" || die "error copying decode_include.sh ($includescriptname)"		# Make a copy of this file and..
 echo "Command: $0 $*" | tee "$logging" >&2      # ..print the command line for logging
+echo "Intermediate directory: $inter" | tee -a "$logging" >&2
 
 ## data prep
 if [ $stage -le 3 ]; then
@@ -158,9 +176,7 @@ fi
 
 ## feature generation
 if [ $stage -le 5 ]; then
-	echo -e "\n==========================">&2
-	echo "Feature generation" | tee "$inter/stage" >&2
-	echo "==========================">&2
+	logtitle "Feature generation"
 	[ -e "$model/mfcc.conf" ] && cp "$model/mfcc.conf" "$inter" 2>/dev/null
 	[ -e "$model/conf/mfcc.conf" ] && cp "$model/conf/mfcc.conf" "$inter" 2>/dev/null
 	steps/make_mfcc.sh --nj "$this_nj" --mfcc-config "$inter/mfcc.conf" "$data/ALL" "$data/ALL/log" "$inter/mfcc" 2>&1 | tee -a $logging >&2 || die "feature generation failed"
@@ -169,14 +185,12 @@ fi
 
 ## decode
 if [ $stage -le 6 ]; then
-	echo -e "\n==========================">&2
-	echo "Decoding" | tee "$inter/stage" >&2
-	echo "==========================">&2
+	logtitle "Decoding"
 	echo -n "Duration of speech: " >&2
 	cat "$data/ALL/segments" | awk '{s+=$4-$3} END {printf("%.0f", s)}' | local/convert_time.sh
 	rm -r -f "${inter}/decode"
 	tmp_decode=$result/tmp/ && mkdir -p "$tmp_decode"
-    tmp=$(mktemp -d -p "$tmp_decode")
+	tmp=$(mktemp -d -p "$tmp_decode")
 	cp -r models/AM/conf models/AM/final.mdl models/AM/frame_subsampling_factor "$tmp_decode"
 
 
@@ -198,9 +212,7 @@ fi
 
 ## rescore
 if [ $stage -le 7 ] && [ -e "$llmodel" ] && [ -e "$inter/decode/num_jobs" ]; then
-	echo -e "\n==========================">&2
-	echo "Rescoring" | tee "$inter/stage" >&2
-	echo "==========================">&2
+	logtitle "Rescoring"
 	numjobs=$(< $inter/decode/num_jobs)
 	eval "$timer" steps/lmrescore_const_arpa.sh --skip-scoring true "$lpath" "$llpath" "$data/ALL" "$inter/decode" "$inter/rescore" | tee -a "$logging" 2>&1 &
 	pid=$!
@@ -219,9 +231,7 @@ fi
 
 ## create readable output
 if [ $stage -le 8 ] && [ -e "$rescore/num_jobs" ]; then
-	echo -e "\n==========================">&2
-	echo -e "Producing output" | tee $inter/stage >&2
-	echo "==========================">&2
+	logtitle "Producing output"
 
 	frame_shift_opt=
 	rm -f "$data"/ALL/1Best.* "$result"/1Best* "$rescore"/1Best.*
@@ -265,9 +275,7 @@ fi
 
 ## score if reference transcription exists
 if [ $stage -le 9 ] && [ -s "$data/ALL/ref.stm" ]; then
-	echo -e "\n==========================">&2
-	echo -e "Scoring" | tee $inter/stage >&2
-	echo "==========================">&2
+	logtitle "Scoring"
 	# score using asclite, then produce alignments and reports using sclite
 	[ -s "$data/ALL/test.uem" ] && uem="-uem $data/ALL/test.uem"
 	for iac in $inv_acoustic_scale; do
@@ -302,19 +310,14 @@ if [ -z "$mwip" ] && [ -z "$miac" ]; then
 	## convert to XML if output exists
 	if [ $stage -le 10 ] && [ -s "$result/1Best.ctm" ] && [ -x ./scripts/ctm2xml.py ];
 	then
-		echo -e "\n==========================">&2
-		echo -e "Conversion to XML" | tee $inter/stage >&2
-		echo "==========================">&2
-
+		logtitle "Conversion to XML"
 		./scripts/ctm2xml.py "$result" "1Best" "$inter" || die "ctm2xml failed"
 	fi
 
 	## process speaker diarisation output
 	if [ $stage -le 11 ] && [ -s "$result/liumlog/1Best.seg" ] && [ -x ./scripts/addspkctm.py ];
 	then
-		echo -e "\n==========================">&2
-		echo -e "Processing speaker diarisation output" | tee $inter/stage >&2
-		echo "==========================">&2
+		logtitle "Processing speaker diarisation output"
 
 		#note, idents (mwip/miac are not for pipelines that use this and late stages
 
@@ -327,9 +330,7 @@ if [ -z "$mwip" ] && [ -z "$miac" ]; then
 	fi
 
 	if [ $stage -le 12 ] && [ -s "$result/liumlog/1Best.seg" ] && [ -x ./scripts/wordpausestatistic.perl ]; then
-		echo -e "\n==========================">&2
-		echo -e "Adding sentence boundaries" | tee $inter/stage >&2
-		echo "==========================">&2
+		logtitle "Adding sentence boundaries"
 
 		# Add sentence boundaries
 		cat "$result/1Best.ctm" | perl scripts/wordpausestatistic.perl 1.0 "$result/1Best.sent" || die "Failure adding sentence boundaries"
@@ -337,9 +338,9 @@ if [ -z "$mwip" ] && [ -z "$miac" ]; then
 
 fi
 
-echo "Output written to:">&2
-echo " - CTM:                 $result/1Best.ctm">&2
-echo " - Text with scores:    $result/1Best.txt">&2
-echo " - Text without scores: $result/1Best_plain.txt" >&2
-echo " - XML:                 $result/1Best.xml" >&2
-echo "Done" | tee $inter/stage >&2
+log "Output written to:"
+log " - CTM:                 $result/1Best.ctm"
+log " - Text with scores:    $result/1Best.txt"
+log " - Text without scores: $result/1Best_plain.txt"
+log " - XML:                 $result/1Best.xml"
+logtitle "Done"
