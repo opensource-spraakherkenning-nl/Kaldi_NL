@@ -80,8 +80,6 @@ die() {
 [ -n "$llmodel" ] || die "This script must be sourced, missing: \$llmodel"   #this variable does not exist in the decode_template
 [ -n "$lpath" ] || die "This script must be sourced, missing: \$lpath"
 [ -n "$llpath" ] || die "This script must be sourced, missing: \$llpath"
-[ -n "$symtab" ] || die "This script must be sourced, missing: \$symtab"
-[ -n "$wordbound" ] || die "This script must be sourced, missing: \$wordbound"
 
 symtab="$lpath/words.txt"
 wordbound="$lpath/phones/word_boundary.int"
