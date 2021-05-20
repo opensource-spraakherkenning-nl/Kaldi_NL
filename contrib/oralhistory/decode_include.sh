@@ -111,9 +111,6 @@ wordbound="$lpath/phones/word_boundary.int"
 # shellcheck disable=SC1091
 . parse_options.sh || exit 1;
 
-# stop auto-exporting all variables
-set +a
-
 if [ $# -lt 2 ]; then
 	echo "Wrong #arguments ($#, expected 2)"
 	echo "Usage: decode.sh [options] <source-dir|source files|txt-file list of source files> <decode-dir>"
@@ -134,7 +131,6 @@ if [ $# -lt 2 ]; then
 	exit 1;
 fi
 
-
 result=${!#}
 if [[ "$model" = *" "* ]]; then
 	die "Model path ($model) may not contain any spaces!"
@@ -150,6 +146,8 @@ rescore=$inter/decode
 [ "$(echo "$inv_acoustic_scale" | wc -w)" -gt 1 ] && miac=true
 [ "$(echo "$word_ins_penalty" | wc -w)" -gt 1 ] && mwip=true
 
+# stop auto-exporting all variables
+set +a
 
 mkdir -p $inter || die "unable to create intermediate directory $inter"
 timer="$(which time)" #This is not the shell's time function but GNU time! needs to be installed explicitly or you get weird errors!
