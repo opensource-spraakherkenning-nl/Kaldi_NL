@@ -137,6 +137,9 @@ if [ $# -lt 2 ]; then
     exit 1;
 fi
 
+#stop auto-exporting all variables
+set +a
+
 result=${!#}
 if [[ "$model" = *" "* ]]; then
 	die "Model path ($model) may not contain any spaces!"
@@ -152,8 +155,6 @@ rescore="$inter/decode"
 [ "$(echo "$inv_acoustic_scale" | wc -w)" -gt 1 ] && miac=true
 [ "$(echo "$word_ins_penalty" | wc -w)" -gt 1 ] && mwip=true
 
-#stop auto-exporting all variables
-set +a
 
 mkdir -p $inter || die "unable to create intermediate directory $inter"
 timer="$(which time)" #This is not the shell's time function but GNU time! needs to be installed explicitly or you get weird errors!
