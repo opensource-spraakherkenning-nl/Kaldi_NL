@@ -58,30 +58,30 @@ die() {
     exit 2
 }
 
-[ -n "$cmd" ] && cmd="run.pl"
-[ -n "$nj" ] && nj=8                               # maximum number of simultaneous jobs used for feature generation and decoding
-[ -n "$stage" ] && stage=1
-[ -n "$numthreads" ] && numthreads=1               # used for decoding
-[ -n "$file_types" ] && file_types="wav mp3"       # file types to include for transcription
-[ -n "$splittext" ] && splittext=true
-[ -n "$dorescore" ] && dorescore=true              # rescore with largeLM as default
-[ -n "$copyall" ] && copyall=false                 # copy all source files (true) or use symlinks (false)
-[ -n "$overwrite" ] && overwrite=true              # overwrite the 1st pass output if already present
-[ -n "$multichannel" ] && multichannel=true
-[ -n "$nbest" ] && nbest=0                         # if value >0, generate NBest.ctm with this amount of transcription alternatives
-[ -n "$inv_acoustic_scale" ] && inv_acoustic_scale="11"  # used for 1-best and N-best generation
-[ -n "$word_ins_penalty" ] && word_ins_penalty="-1.0" # word insertion penalty
-[ -n "$beam" ] && beam=7
-[ -n "$decode_mbr" ] && decode_mbr=true
+[ -n "$cmd" ] || cmd="run.pl"
+[ -n "$nj" ] || nj=8                               # maximum number of simultaneous jobs used for feature generation and decoding
+[ -n "$stage" ] || stage=1
+[ -n "$numthreads" ] || numthreads=1               # used for decoding
+[ -n "$file_types" ] || file_types="wav mp3"       # file types to include for transcription
+[ -n "$splittext" ] || splittext=true
+[ -n "$dorescore" ] || dorescore=true              # rescore with largeLM as default
+[ -n "$copyall" ] || copyall=false                 # copy all source files (true) or use symlinks (false)
+[ -n "$overwrite" ] || overwrite=true              # overwrite the 1st pass output if already present
+[ -n "$multichannel" ] || multichannel=true
+[ -n "$nbest" ] || nbest=0                         # if value >0, generate NBest.ctm with this amount of transcription alternatives
+[ -n "$inv_acoustic_scale" ] || inv_acoustic_scale="11"  # used for 1-best and N-best generation
+[ -n "$word_ins_penalty" ] || word_ins_penalty="-1.0" # word insertion penalty
+[ -n "$beam" ] || beam=7
+[ -n "$decode_mbr" ] || decode_mbr=true
 
-[ -n "$model" ] && die "This script must be sourced, missing: \$model"
-[ -n "$graph" ] && graph="$model/graph"
-[ -n "$lmodel" ] && die "This script must be sourced, missing: \$lmodel"
-[ -n "$llmodel" ] && die "This script must be sourced, missing: \$llmodel"   #this variable does not exist in the decode_template
-[ -n "$lpath" ] && die "This script must be sourced, missing: \$lpath"
-[ -n "$llpath" ] && die "This script must be sourced, missing: \$llpath"
-[ -n "$symtab" ] && die "This script must be sourced, missing: \$symtab"
-[ -n "$wordbound" ] && die "This script must be sourced, missing: \$wordbound"
+[ -n "$model" ] || die "This script must be sourced, missing: \$model"
+[ -n "$graph" ] || graph="$model/graph"
+[ -n "$lmodel" ] || die "This script must be sourced, missing: \$lmodel"
+[ -n "$llmodel" ] || die "This script must be sourced, missing: \$llmodel"   #this variable does not exist in the decode_template
+[ -n "$lpath" ] || die "This script must be sourced, missing: \$lpath"
+[ -n "$llpath" ] || die "This script must be sourced, missing: \$llpath"
+[ -n "$symtab" ] || die "This script must be sourced, missing: \$symtab"
+[ -n "$wordbound" ] || die "This script must be sourced, missing: \$wordbound"
 
 symtab="$lpath/words.txt"
 wordbound="$lpath/phones/word_boundary.int"
