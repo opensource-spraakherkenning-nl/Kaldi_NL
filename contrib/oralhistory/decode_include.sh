@@ -162,8 +162,11 @@ scriptname="$(readlink -f "$0")" #the invoked script
 includescriptname="$(readlink -f "${BASH_SOURCE[0]}")" #this sources script
 cp -f "$scriptname" "$inter/decode.sh" || die "error copying decode.sh ($scriptname)"		# Make a copy of this file and..
 cp -f "$includescriptname" "$inter/decode_include.sh" || die "error copying decode_include.sh ($includescriptname)"		# Make a copy of this file and..
-echo "Command: $0 $*" | tee "$logging" >&2      # ..print the command line for logging (this starts a fresh log)
-log "Kaldi_NL Version: $VERSION"
+date=$(date)
+echo "(Starting log at $date)" > $logging
+logtitle "Kaldi-NL v$VERSION"
+log "    https://github.com/opensource-spraakherkenning-nl/Kaldi_NL"
+log "Command: $0 $*" # ..print the command line
 log "Intermediate directory: $inter"
 log "Output directory: $result"
 log "Log: $logging"
@@ -372,3 +375,5 @@ fi
 if [ -e "$result/1Best.sent" ]; then
 	log " - Sentence boundaries: $result/1Best.sent"
 fi
+date=$(date)
+log "(Finished at $date)"

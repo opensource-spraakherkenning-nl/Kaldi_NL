@@ -171,7 +171,9 @@ fi
 timer="$timer -o $inter/time.log -f \"%e %U %S %M\""
 scriptname="$(readlink -f "$0")" #the invoked script
 cp -f "$scriptname" "$inter/decode.sh" || die "error copying decode.sh ($scriptname)"		# Make a copy of this file and..
-echo "Command: $0 $*" | tee "$logging" >&2      # ..print the command line for logging (this starts a fresh log)
+echo "(Starting log at $date)" > $logging
+logtitle "Kaldi-NL v$VERSION"
+log "    https://github.com/opensource-spraakherkenning-nl/Kaldi_NL"
 log "Kaldi_NL Version: $VERSION"
 log "Intermediate directory: $inter"
 log "Output directory: $result"
@@ -375,3 +377,5 @@ fi
 if [ -e "$result/1Best.sent" ]; then
 	log " - Sentence boundaries: $result/1Best.sent"
 fi
+date=$(date)
+log "(finished at $date)"
