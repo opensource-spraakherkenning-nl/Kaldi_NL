@@ -349,14 +349,14 @@ if [ -z "$mwip" ] && [ -z "$miac" ]; then
 
 fi
 
+logtitle "Done"
 log "Output written to:"
 log " - CTM:                 $result/1Best.ctm"
 log " - Text with scores:    $result/1Best.txt"
 log " - Text without scores: $result/1Best_plain.txt"
-if [ -x "$result/1Best.xml" ]; then
+if [ -e "$result/1Best.xml" ]; then
 	log " - XML:                 $result/1Best.xml"
 fi
-if [ -x "$result/1Best.ctm.spk" ]; then
+if [ -e "$result/1Best.ctm.spk" ]; then
 	log " - Speaker diarisation: $result/1Best.ctm.spk"
 fi
-logtitle "Done"
