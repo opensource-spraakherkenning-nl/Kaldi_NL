@@ -46,6 +46,8 @@
 
 # shellcheck disable=SC2002
 # ^-- allow the use of cat file | cmd   (rather than cmd < file)
+# shellcheck disable=SC1091
+# ^-- don't attempt fo follow includes
 
 # auto-export all variables
 set -a
@@ -105,10 +107,8 @@ symtab="$lpath/words.txt"
 wordbound="$lpath/phones/word_boundary.int"
 [ -e "$llpath" ] && symtab="$llpath/words.txt" && wordbound="$llpath/phones/word_boundary.int"
 
-# shellcheck disable=SC1091
 [ -f ./path.sh ] && . ./path.sh; # source the path.
 
-# shellcheck disable=SC1091
 . parse_options.sh || exit 1;
 
 if [ $# -lt 2 ]; then
@@ -325,18 +325,19 @@ if [ -z "$mwip" ] && [ -z "$miac" ]; then
 	fi
 
 	## process speaker diarisation output
-	if [ $stage -le 11 ] && [ -s "$result/liumlog/1Best.seg" ] && [ -x ./scripts/addspkctm.py ];
+	if [ $stage -le 11 ] && [ -s "$result/liumlog/$segment.seg" ] && [ -x ./scripts/addspkctm.py ];
 	then
 		logtitle "Processing speaker diarisation output"
 
-		#note, idents (mwip/miac are not for pipelines that use this and late stages
+		segments="$(cat "$data/ALL/segments" | cut -d " " -f 2 | sort | uniq)"
+		for segment in $segments; do
+			# Create .rttm
+			spkr_seg="$result/liumlog/$segment.seg"
+			cat "$spkr_seg" | sed -n '/;;/!p' | sort -nk3 | awk '{printf "SPEAKER %s %s %.2f %.2f <NA> <NA> %s <NA>\n", $1, $2, ($3 / 100), ($4 / 100), $8}' > "$result/$segment.rttm" || die "Failure creating RTTM file from speaker diarisation output"
 
-		# Create .rttm
-		spkr_seg="$result/liumlog/1Best.seg"
-		cat "$spkr_seg" | sed -n '/;;/!p' | sort -nk3 | awk '{printf "SPEAKER %s %s %.2f %.2f <NA> <NA> %s <NA>\n", $1, $2, ($3 / 100), ($4 / 100), $8}' > "$result/1Best.rttm" || die "Failure creating RTTM file from speaker diarisation output"
-
-		# Create .ctm with speaker ids
-		./scripts/addspkctm.py "$result/1Best.rttm" "$result/1Best.ctm" || die "Failure adding speakers to CTM"
+			# Create .ctm with speaker ids
+			./scripts/addspkctm.py "$result/$segment.rttm" "$result/1Best.ctm" || die "Failure adding speakers to CTM"
+		done
 	fi
 
 	if [ $stage -le 12 ] && [ -s "$result/liumlog/1Best.seg" ] && [ -x ./scripts/wordpausestatistic.perl ]; then
@@ -352,5 +353,10 @@ log "Output written to:"
 log " - CTM:                 $result/1Best.ctm"
 log " - Text with scores:    $result/1Best.txt"
 log " - Text without scores: $result/1Best_plain.txt"
-log " - XML:                 $result/1Best.xml"
+if [ -x "$result/1Best.xml" ]; then
+	log " - XML:                 $result/1Best.xml"
+fi
+if [ -x "$result/1Best.ctm.spk" ]; then
+	log " - Speaker diarisation: $result/1Best.ctm.spk"
+fi
 logtitle "Done"

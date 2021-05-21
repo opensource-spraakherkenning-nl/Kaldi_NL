@@ -44,6 +44,11 @@
 # 		6.	If a reference transcription (.stm) is available, an evaluation is performed using asclite. Results of the evalluation can then be
 #			found in <output-dir>/1Best.ctm.{dtl,pra,sys}
 #
+#
+# shellcheck disable=SC2002
+# ^-- allow the use of cat file | cmd   (rather than cmd < file)
+# shellcheck disable=SC1091
+# ^-- don't attempt fo follow includes
 
 #auto export all variables
 set -a
@@ -327,14 +332,15 @@ if [ -z "$mwip" ] && [ -z "$miac" ]; then
 	then
 		logtitle "Processing speaker diarisation output"
 
-		#note, idents (mwip/miac are not for pipelines that use this and late stages
+		segments="$(cat "$data/ALL/segments" | cut -d " " -f 2 | sort | uniq)"
+		for segment in $segments; do
+			# Create .rttm
+			spkr_seg="$result/liumlog/$segment.seg"
+			cat "$spkr_seg" | sed -n '/;;/!p' | sort -nk3 | awk '{printf "SPEAKER %s %s %.2f %.2f <NA> <NA> %s <NA>\n", $1, $2, ($3 / 100), ($4 / 100), $8}' > "$result/$segment.rttm" || die "Failure creating RTTM file from speaker diarisation output"
 
-		# Create .rttm
-		spkr_seg="$result/liumlog/1Best.seg"
-		cat "$spkr_seg" | sed -n '/;;/!p' | sort -nk3 | awk '{printf "SPEAKER %s %s %.2f %.2f <NA> <NA> %s <NA>\n", $1, $2, ($3 / 100), ($4 / 100), $8}' > "$result/1Best.rttm" || die "Failure creating RTTM file from speaker diarisation output"
-
-		# Create .ctm with speaker ids
-		./scripts/addspkctm.py "$result/1Best.rttm" "$result/1Best.ctm" || die "Failure adding speakers to CTM"
+			# Create .ctm with speaker ids
+			./scripts/addspkctm.py "$result/$segment.rttm" "$result/1Best.ctm" || die "Failure adding speakers to CTM"
+		done
 	fi
 
 	if [ $stage -le 12 ] && [ -s "$result/liumlog/1Best.seg" ] && [ -x ./scripts/wordpausestatistic.perl ]; then
