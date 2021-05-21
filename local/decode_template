@@ -50,6 +50,8 @@
 # shellcheck disable=SC1091
 # ^-- don't attempt fo follow includes
 
+VERSION="0.3"
+
 #auto export all variables
 set -a
 #
@@ -169,10 +171,11 @@ fi
 timer="$timer -o $inter/time.log -f \"%e %U %S %M\""
 scriptname="$(readlink -f "$0")" #the invoked script
 cp -f "$scriptname" "$inter/decode.sh" || die "error copying decode.sh ($scriptname)"		# Make a copy of this file and..
-echo "Command: $0 $*" | tee "$logging" >&2      # ..print the command line for logging
-echo "Intermediate directory: $inter" | tee -a "$logging" >&2
-echo "Output directory: $result" | tee -a "$logging" >&2
-echo "Log: $logging" | tee -a "$logging" >&2
+echo "Command: $0 $*" | tee "$logging" >&2      # ..print the command line for logging (this starts a fresh log)
+log "Kaldi_NL Version: $VERSION"
+log "Intermediate directory: $inter"
+log "Output directory: $result"
+log "Log: $logging"
 
 ## data prep
 if [ $stage -le 3 ]; then
