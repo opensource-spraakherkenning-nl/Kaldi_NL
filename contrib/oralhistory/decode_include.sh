@@ -162,6 +162,8 @@ cp -f "$scriptname" "$inter/decode.sh" || die "error copying decode.sh ($scriptn
 cp -f "$includescriptname" "$inter/decode_include.sh" || die "error copying decode_include.sh ($includescriptname)"		# Make a copy of this file and..
 echo "Command: $0 $*" | tee "$logging" >&2      # ..print the command line for logging
 echo "Intermediate directory: $inter" | tee -a "$logging" >&2
+echo "Output directory: $result" | tee -a "$logging" >&2
+echo "Log: $logging" | tee -a "$logging" >&2
 
 ## data prep
 if [ $stage -le 3 ]; then
