@@ -279,18 +279,22 @@ fi
 ## score if reference transcription exists
 if [ $stage -le 9 ] && [ -s "$data/ALL/ref.stm" ]; then
 	logtitle "Scoring"
-	# score using asclite, then produce alignments and reports using sclite
-	[ -s "$data/ALL/test.uem" ] && uem="-uem $data/ALL/test.uem"
-	for iac in $inv_acoustic_scale; do
-		for wip in $word_ins_penalty; do
-			ident=
-			[ $mwip ] && ident="$wip."
-			[ $miac ] && ident="$ident$iac."
-			asclite -D -noisg -r "$data/ALL/ref.stm" stm -h "$result/1Best.${ident}ctm" ctm "$uem" -o sgml 2>&1 | tee -a "$logging" >&2
-			cat "$result/1Best.${ident}ctm.sgml" | sclite -P -o sum -o pralign -o dtl -n $result/1Best.${ident}ctm 2>&1  | tee -a "$logging" >&2
-			[ -e "$result/1Best.${ident}ctm.sys" ] && [ "$(cat "$result/1Best.${ident}ctm.sys" | grep -c 'MS\|FS\|MT\|FT')" -gt 0 ] && local/split_results.sh "$result/1Best.${ident}ctm.sys" "$result/1Best.${ident}ctm.sys.split"
+	if grep -q "returned err code" "$data/ALL/ref.stm"; then
+		log "WARNING: Unable to score, $data/ALL/ref.stm does not hold valid reference data"
+	else
+		# score using asclite, then produce alignments and reports using sclite
+		[ -s "$data/ALL/test.uem" ] && uem="-uem $data/ALL/test.uem"
+		for iac in $inv_acoustic_scale; do
+			for wip in $word_ins_penalty; do
+				ident=
+				[ $mwip ] && ident="$wip."
+				[ $miac ] && ident="$ident$iac."
+				asclite -D -noisg -r "$data/ALL/ref.stm" stm -h "$result/1Best.${ident}ctm" ctm "$uem" -o sgml 2>&1 | tee -a "$logging" >&2
+				cat "$result/1Best.${ident}ctm.sgml" | sclite -P -o sum -o pralign -o dtl -n $result/1Best.${ident}ctm 2>&1  | tee -a "$logging" >&2
+				[ -e "$result/1Best.${ident}ctm.sys" ] && [ "$(cat "$result/1Best.${ident}ctm.sys" | grep -c 'MS\|FS\|MT\|FT')" -gt 0 ] && local/split_results.sh "$result/1Best.${ident}ctm.sys" "$result/1Best.${ident}ctm.sys.split"
+			done
 		done
-	done
+	fi
 
 	#add an output variant without the scores
 	for iac in $inv_acoustic_scale; do
