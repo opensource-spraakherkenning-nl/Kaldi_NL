@@ -163,7 +163,7 @@ includescriptname="$(readlink -f "${BASH_SOURCE[0]}")" #this sources script
 cp -f "$scriptname" "$inter/decode.sh" || die "error copying decode.sh ($scriptname)"		# Make a copy of this file and..
 cp -f "$includescriptname" "$inter/decode_include.sh" || die "error copying decode_include.sh ($includescriptname)"		# Make a copy of this file and..
 date=$(date)
-echo "(Starting log at $date)" > $logging
+echo "(starting log at $date)" | tee "$logging" >&2
 logtitle "Kaldi-NL v$VERSION"
 log "    https://github.com/opensource-spraakherkenning-nl/Kaldi_NL"
 log "Command: $0 $*" # ..print the command line

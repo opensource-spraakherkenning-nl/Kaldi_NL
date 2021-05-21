@@ -171,7 +171,7 @@ fi
 timer="$timer -o $inter/time.log -f \"%e %U %S %M\""
 scriptname="$(readlink -f "$0")" #the invoked script
 cp -f "$scriptname" "$inter/decode.sh" || die "error copying decode.sh ($scriptname)"		# Make a copy of this file and..
-echo "(Starting log at $date)" > $logging
+echo "(starting log at $date)" | tee "$logging" >&2
 logtitle "Kaldi-NL v$VERSION"
 log "    https://github.com/opensource-spraakherkenning-nl/Kaldi_NL"
 log "Kaldi_NL Version: $VERSION"
