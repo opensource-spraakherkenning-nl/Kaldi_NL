@@ -138,16 +138,17 @@ fi
 if [[ "$result" = *" "* ]]; then
 	die "Output path ($result) may not contain any spaces!"
 fi
-inter="${result}/intermediate"
-data="${inter}/data"
-logging="${inter}/log"
-rescore=$inter/decode
-
 [ "$(echo "$inv_acoustic_scale" | wc -w)" -gt 1 ] && miac=true
 [ "$(echo "$word_ins_penalty" | wc -w)" -gt 1 ] && mwip=true
 
 # stop auto-exporting all variables
 set +a
+
+inter="${result}/intermediate"
+data="${inter}/data"
+logging="${inter}/log"
+rescore=$inter/decode
+
 
 mkdir -p $inter || die "unable to create intermediate directory $inter"
 timer="$(which time)" #This is not the shell's time function but GNU time! needs to be installed explicitly or you get weird errors!
