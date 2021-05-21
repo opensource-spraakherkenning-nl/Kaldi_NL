@@ -325,7 +325,7 @@ if [ -z "$mwip" ] && [ -z "$miac" ]; then
 	fi
 
 	## process speaker diarisation output
-	if [ $stage -le 11 ] && [ -s "$result/liumlog/$segment.seg" ] && [ -x ./scripts/addspkctm.py ];
+	if [ $stage -le 11 ] && [ -s "$result/liumlog/segmentation.1.log" ] && [ -x ./scripts/addspkctm.py ];
 	then
 		logtitle "Processing speaker diarisation output"
 
