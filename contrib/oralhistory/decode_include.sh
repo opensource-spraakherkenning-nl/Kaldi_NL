@@ -165,6 +165,7 @@ cp -f "$includescriptname" "$inter/decode_include.sh" || die "error copying deco
 date=$(date)
 echo "(starting log at $date)" | tee "$logging" >&2
 logtitle "Kaldi-NL v$VERSION"
+log ""
 log "    https://github.com/opensource-spraakherkenning-nl/Kaldi_NL"
 log "Command: $0 $*" # ..print the command line
 log "Intermediate directory: $inter"

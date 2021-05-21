@@ -173,6 +173,7 @@ scriptname="$(readlink -f "$0")" #the invoked script
 cp -f "$scriptname" "$inter/decode.sh" || die "error copying decode.sh ($scriptname)"		# Make a copy of this file and..
 echo "(starting log at $date)" | tee "$logging" >&2
 logtitle "Kaldi-NL v$VERSION"
+log ""
 log "    https://github.com/opensource-spraakherkenning-nl/Kaldi_NL"
 log "Kaldi_NL Version: $VERSION"
 log "Intermediate directory: $inter"
