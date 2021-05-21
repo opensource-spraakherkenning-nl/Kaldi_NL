@@ -343,7 +343,7 @@ if [ -z "$mwip" ] && [ -z "$miac" ]; then
 		done
 	fi
 
-	if [ $stage -le 12 ] && [ -s "$result/liumlog/1Best.seg" ] && [ -x ./scripts/wordpausestatistic.perl ]; then
+	if [ $stage -le 12 ] && [ -s "$result/liumlog/segmentation1.log" ] && [ -x ./scripts/wordpausestatistic.perl ]; then
 		logtitle "Adding sentence boundaries"
 
 		# Add sentence boundaries
@@ -362,7 +362,13 @@ for segment in $segments; do
 	if [ -e "$result/$segment.xml" ]; then
 		log " - XML:                 $result/$segment.xml"
 	fi
+	if [ -e "$result/$segment.rttm" ]; then
+		log " - RTTM:                $result/$segment.rttm"
+	fi
 done
 if [ -e "$result/1Best.ctm.spk" ]; then
 	log " - Speaker diarisation: $result/1Best.ctm.spk"
+fi
+if [ -e "$result/1Best.sent" ]; then
+	log " - Sentence boundaries: $result/1Best.sent"
 fi
