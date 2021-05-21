@@ -321,7 +321,7 @@ if [ -z "$mwip" ] && [ -z "$miac" ]; then
 	if [ $stage -le 10 ] && [ -s "$result/1Best.ctm" ] && [ -x ./scripts/ctm2xml.py ];
 	then
 		logtitle "Conversion to XML"
-		./scripts/ctm2xml.py "$result" "1Best" "$result" || die "ctm2xml failed"
+		./scripts/ctm2xml.py "$result" "1Best" "$data" || die "ctm2xml failed"
 	fi
 
 	## process speaker diarisation output
