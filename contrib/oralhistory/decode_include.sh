@@ -354,9 +354,12 @@ log "Output written to:"
 log " - CTM:                 $result/1Best.ctm"
 log " - Text with scores:    $result/1Best.txt"
 log " - Text without scores: $result/1Best_plain.txt"
-if [ -e "$result/1Best.xml" ]; then
-	log " - XML:                 $result/1Best.xml"
-fi
+segments="$(cat "$data/ALL/segments" | cut -d " " -f 2 | sort | uniq)"
+for segment in $segments; do
+	if [ -e "$result/1Best.xml" ]; then
+		log " - XML:                 $result/$segment.xml"
+	fi
+done
 if [ -e "$result/1Best.ctm.spk" ]; then
 	log " - Speaker diarisation: $result/1Best.ctm.spk"
 fi
