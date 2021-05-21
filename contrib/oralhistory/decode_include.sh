@@ -167,7 +167,7 @@ if [ $stage -le 3 ]; then
 	echo -e "\n==========================">&2
 	echo "Data Preparation" | tee "$inter/stage" >&2
 	echo "==========================">&2
-	local/decode_prepdata.sh "$@" || die "Data preparation failed"
+	source local/decode_prepdata.sh || die "Data preparation failed"
 fi
 
 # determine maximum number of jobs for this feature generation and decoding
