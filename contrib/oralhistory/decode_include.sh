@@ -340,7 +340,7 @@ if [ -z "$mwip" ] && [ -z "$miac" ]; then
 		done
 	fi
 
-	if [ $stage -le 12 ] && [ -s "$result/liumlog/segmentation1.log" ] && [ -x ./scripts/wordpausestatistic.perl ]; then
+	if [ $stage -le 12 ] && [ -s "$result/liumlog/segmentation.1.log" ] && [ -x ./scripts/wordpausestatistic.perl ]; then
 		logtitle "Adding sentence boundaries"
 
 		# Add sentence boundaries
