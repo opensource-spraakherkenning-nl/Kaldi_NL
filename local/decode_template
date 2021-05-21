@@ -303,7 +303,7 @@ if [ $stage -le 9 ] && [ -s "$data/ALL/ref.stm" ]; then
 			ident=
 			[ $mwip ] && ident="$wip."
 			[ $miac ] && ident="$ident$iac."
-			cat $result/1Best.${ident}txt | cut -d'(' -f 1 > $inter/1Best_plain.${ident}txt
+			cat $result/1Best.${ident}txt | cut -d'(' -f 1 > $result/1Best_plain.${ident}txt
 		done
 	done
 fi
