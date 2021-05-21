@@ -356,7 +356,7 @@ log " - Text with scores:    $result/1Best.txt"
 log " - Text without scores: $result/1Best_plain.txt"
 segments="$(cat "$data/ALL/segments" | cut -d " " -f 2 | sort | uniq)"
 for segment in $segments; do
-	if [ -e "$result/1Best.xml" ]; then
+	if [ -e "$result/$segment.xml" ]; then
 		log " - XML:                 $result/$segment.xml"
 	fi
 done
