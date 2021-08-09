@@ -16,7 +16,8 @@ if [ ! -d models/NL ] && [ -z "$modelpack" ]; then
         [ ! $return_value -eq 0 ] && fatalerror "Models not downloaded. Cancelling"
     fi
 fi
-mkdir -p $modelpack || fatalerror "Model base directory $modelpack does not exist and unable to create"
+[ -z "$modelpack" ] && fatalerror "Model base directory is empty"
+mkdir -p "$modelpack" || fatalerror "Model base directory $modelpack does not exist and unable to create"
 modelpack=$(realpath $modelpack)
 #link to the model pack directory from the kaldi_nl root
 if [ ! -e models ]; then
