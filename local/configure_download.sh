@@ -5,16 +5,14 @@ if [ $sourced -eq 0 ]; then
 fi
 
 #Set model directory
-if [ ! -d models/NL ] && [ -z "$modelpack" ]; then
-    if [ -d models ]; then
-        modelpack=$(realpath models)
-    else
-        while [ $return_value -eq 0 ] && ! readlink -f $modelpack; do
-            modelpack=$(dialog --stdout --title "Models not found" --inputbox "Enter location to download & store models, do not use ~ " 0 0 "models")
-            return_value=$?
-        done
-        [ ! $return_value -eq 0 ] && fatalerror "Models not downloaded. Cancelling"
-    fi
+if [ -d models ] && [ -z "$modelpack" ]; then
+    modelpack=$(realpath models)
+elif [ ! -d models/NL ] && [ -z "$modelpack" ]; then
+    while [ $return_value -eq 0 ] && ! readlink -f $modelpack; do
+        modelpack=$(dialog --stdout --title "Models not found" --inputbox "Enter location to download & store models, do not use ~ " 0 0 "models")
+        return_value=$?
+    done
+    [ ! $return_value -eq 0 ] && fatalerror "Models not downloaded. Cancelling"
 fi
 [ -z "$modelpack" ] && fatalerror "Model base directory is empty"
 mkdir -p "$modelpack" || fatalerror "Model base directory $modelpack does not exist and unable to create"
