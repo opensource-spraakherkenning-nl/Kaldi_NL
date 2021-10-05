@@ -79,4 +79,7 @@ Kaldi-NL is licensed under the Apache 2.0 licence, this concerns only the script
 and where not explicitly noted otherwise. Note that the various models that can be obtained through Kaldi-NL are never by
 default covered by this license and may often be licensed differently.
 
+The models for Dutch ASR (collectively known as 'oral history') that are installable through this Kaldi_NL distribution are licensed under the [Creative Commons
+Attribution-NonCommercial-ShareAlike license (4.0)](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
+
 
