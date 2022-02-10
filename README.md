@@ -32,6 +32,29 @@ Kaldi recipes, most issues stem from the use of the standard GNU tools. So use g
 in place of cp, awk, sed, time, and file.
 If you encounter any other issues with these script on macOS, please let us know, especially if you've been able to fix them :-)
 
+### Container with Web Interface
+
+For end-users and hosting partners, we provide a container image that ships with a [web
+interface](https://github.com/opensource-spraakherkenning-nl/oralhistory) based on
+[CLAM](https://proycon.github.io/clam/). Through this application some of our pretrained models are directly available for end-users.
+You can pull a prebuilt image from the Docker Hub registry as follows:
+
+```
+$ docker pull proycon/lamachine:kaldi
+```
+
+You can also build the container image yourself using a tool like ``docker build``, which is the recommended option if you are deploying this
+in your own infrastructure. In that case will want adjust the ``Dockerfile`` to set some parameters.
+
+Run the container as follows:
+
+```
+$ docker run -p 8080:80 proycon/lamachine:kaldi
+```
+
+Assuming you run locally, the web interface for Kaldi-NL can then be accessed on ``http://127.0.0.1:8080/oralhistory``.
+
+
 ## Usage
 
 The decode script is called with:
@@ -51,27 +74,6 @@ pre-segmentation or to limit the amount of audio to transcribe.
 As part of the transcription process, the LIUM speech diarization toolkit is utilized. This produces a directory
 `<output-dir>/liumlog`, which contains .seg files that provide information about the speaker diarization. For more
 information on the content of these files, please visit http://www-lium.univ-lemans.fr/diarization/.
-
-### Container with Web Interface
-
-For end-users and hosting partners, we provide a container image that ships with a [web
-interface](https://github.com/opensource-spraakherkenning-nl/oralhistory) based on
-[CLAM](https://proycon.github.io/clam/). You can pull a prebuilt image from the Docker Hub registry as follows:
-
-```
-$ docker pull proycon/lamachine:kaldi
-```
-
-You can also build the container image yourself using a tool like ``docker build``, which is the recommended option if you are deploying this
-in your own infrastructure. In that case will want adjust the ``Dockerfile`` to set some parameters.
-
-Run the container as follows:
-
-```
-$ docker run -p 8080:80 proycon/lamachine:kaldi
-```
-
-Assuming you run locally, the web interface for Kaldi-NL can then be accessed on ``http://127.0.0.1:8080/oralhistory``.
 
 
 ## Details
