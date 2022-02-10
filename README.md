@@ -52,9 +52,26 @@ As part of the transcription process, the LIUM speech diarization toolkit is uti
 `<output-dir>/liumlog`, which contains .seg files that provide information about the speaker diarization. For more
 information on the content of these files, please visit http://www-lium.univ-lemans.fr/diarization/.
 
-### Web Interface
+### Container with Web Interface
 
-The docker image ships with a web interface based on [CLAM](https://proycon.github.io/clam/). To use the web interface, start the web server by running the ``lamachine-start-webserver`` command. The web interface for Kaldi-NL can be found on ``http://<docker-container-ip>/oralhistory``.
+For end-users and hosting partners, we provide a container image that ships with a [web
+interface](https://github.com/opensource-spraakherkenning-nl/oralhistory) based on
+[CLAM](https://proycon.github.io/clam/). You can pull a prebuilt image from the Docker Hub registry as follows:
+
+```
+$ docker pull proycon/lamachine:kaldi
+```
+
+You can also build the container image yourself using a tool like ``docker build``, which is the recommended option if you are deploying this
+in your own infrastructure. In that case will want adjust the ``Dockerfile`` to set some parameters.
+
+Run the container as follows:
+
+```
+$ docker run -p 8080:80 proycon/lamachine:kaldi
+```
+
+Assuming you run locally, the web interface for Kaldi-NL can then be accessed on ``http://127.0.0.1:8080/oralhistory``.
 
 
 ## Details
