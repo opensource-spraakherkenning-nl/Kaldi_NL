@@ -10,7 +10,8 @@ recognition system.
 
 The software is run from the directory where you cloned this repository.  Kaldi NL depends on a working installation of
 Kaldi (http://kaldi-asr.org/), Java, Perl, Python 3, and SoX (http://sox.sourceforge.net/).  They have been tested on
-Ubuntu Linux 16.10, 18.04 LTS and 20.04 LTS but are expected to run on other Linux distributions as well.
+Ubuntu Linux 16.10, 18.04 LTS and 20.04 LTS but are expected to run on other Linux distributions as well. A container
+image is provided that contains all of the dependencies and models.
 
 Before running the decoder for the first time, or when you need to change its configuration, please run ``configure.sh``.
 The ``configure.sh`` script will ask for the location of your Kaldi installation, and for the location to put the models.
@@ -21,7 +22,7 @@ are the decoding graphs needed for Kaldi. This last step may take a while (but o
 It is also possible to install a completely pre-made decoder, as supplied by certain partners
 in that case you can specify one or more of the following models as a parameter to ``configure.sh``:
 
-* **oralhistory** - These are models and decoder graphs for oral history interviews (OH), parliamentary talks (PR), and daily conversations (GN) created by Emre Yilmaz, CLST, Radboud University, Nijmegen. A decode script is supplied for for each, respectively named ``decoder_OH.sh``, ``decoder_PR.sh`` and ``decode_GN.sh``.
+* `asr_nl` - **Automatic Speech Recognition for Dutch** - These are models and decoder graphs for oral history interviews (OH), parliamentary talks (PR), and daily conversations (GN) created by Emre Yilmaz, CLST, Radboud University, Nijmegen. A decode script is supplied for for each, respectively named ``decoder_OH.sh``, ``decoder_PR.sh`` and ``decode_GN.sh``.
 
 Kaldi NL, with all its dependencies, is also included as an optional extra in the [LaMachine
 meta-distribution](https://proycon.github.io/LaMachine) , this may make it more readily usable/deployable by end-users.
@@ -34,13 +35,17 @@ If you encounter any other issues with these script on macOS, please let us know
 
 ### Container with Web Interface
 
-For end-users and hosting partners, we provide a container image that ships with a [web
-interface](https://github.com/opensource-spraakherkenning-nl/oralhistory) based on
-[CLAM](https://proycon.github.io/clam/). Through this application some of our pretrained models are directly available for end-users.
-You can pull a prebuilt image from the Docker Hub registry as follows:
+For end-users and hosting partners, we provide a web-interface offering easy access to *Automatic Speech Recognition
+for Dutch* (`asr_nl`). A container image is available to deploy this webservice locally, please see: [Automatic Speech
+Recognition for Dutch](https://github.com/opensource-spraakherkenning-nl/asr_nl) for the webservice source and further instructions.
+
+### Container without Web Interface
+
+This contains the `asr_nl` models but not the webservice.
+You can pull a prebuilt image from the Docker Hub registry using docker as follows:
 
 ```
-$ docker pull proycon/lamachine:kaldi
+$ docker pull proycon/lamachine:kaldi_nl
 ```
 
 You can also build the container image yourself using a tool like ``docker build``, which is the recommended option if you are deploying this
@@ -49,17 +54,18 @@ in your own infrastructure. In that case will want adjust the ``Dockerfile`` to 
 Run the container as follows:
 
 ```
-$ docker run -p 8080:80 proycon/lamachine:kaldi
+$ docker run -t -i -v /your/data/path:/data proycon/lamachine:kaldi_nl
 ```
 
-Assuming you run locally, the web interface for Kaldi-NL can then be accessed on ``http://127.0.0.1:8080/oralhistory``.
-
+The `decode.sh` command from the next section can be appended to the docker run line.
 
 ## Usage
 
 The decode script is called with:
 
 `./decode.sh [options] <speech-dir>|<speech-file>|<txt-file containing list of source material> <output-dir>`
+
+If you want to use one of the pre-built models from `asr_nl`, use `decode_OH.sh` or any of the other options instead of the generic `decode.sh`.
 
 All parameters before the last one are automatically interpreted as one of the three types listed above.
 After the process is done, the main results are produced in `<output-dir>/1Best.ctm`. This file contains a list of all
@@ -98,7 +104,7 @@ Kaldi-NL is licensed under the Apache 2.0 licence, this concerns only the script
 and where not explicitly noted otherwise. Note that the various models that can be obtained through Kaldi-NL are never by
 default covered by this license and may often be licensed differently.
 
-The models for Dutch ASR (collectively known as 'oral history') that are installable through this Kaldi_NL distribution are licensed under the [Creative Commons
+The models for Dutch (asr_nl) that are installable through this Kaldi_NL distribution are licensed under the [Creative Commons
 Attribution-NonCommercial-ShareAlike license (4.0)](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
 
 
