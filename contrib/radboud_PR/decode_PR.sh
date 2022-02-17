@@ -76,5 +76,5 @@ extractor=
 
 set +a
 
-include_path="$(dirname "$(readlink -f "$0")")"
+include_path="$(dirname "$(readlink -f "$0")")/../radboud_shared"
 source "$include_path/decode_include.sh"
