@@ -29,12 +29,6 @@ RUN apt-get update && \
 RUN ln -s /usr/bin/python3 /usr/bin/python
 ENV KALDI_ROOT=/opt/kaldi
 WORKDIR /opt/kaldi/
-CMD /bin/bash -l
-
-#multistage build:
-FROM kaldi
-ARG BRANCH="master"
-ARG MODELS="utwente radboud_OH radboud_PR radboud_GN"
 RUN git clone --depth 1 https://github.com/kaldi-asr/kaldi.git /opt/kaldi
 RUN cd /opt/kaldi/tools && \
        ./extras/install_mkl.sh && \
@@ -47,7 +41,12 @@ RUN cd /opt/kaldi/tools && \
        find /opt/intel -type f -name "*.a" -exec rm {} \; && \
        find /opt/intel -type f -regex '.*\(_mc.?\|_mic\|_thread\|_ilp64\)\.so' -exec rm {} \; && \
        rm -rf /opt/kaldi/.git
+CMD /bin/bash -l
 
+#multistage build:
+FROM kaldi
+ARG BRANCH="master"
+ARG MODELS="utwente radboud_OH radboud_PR radboud_GN"
 RUN git clone --branch "$BRANCH" https://github.com/opensource-spraakherkenning-nl/Kaldi_NL.git /opt/Kaldi_NL
 RUN cd /opt/Kaldi_NL && ./configure.sh $MODELS
 
