@@ -47,11 +47,17 @@ Dutch](https://github.com/opensource-spraakherkenning-nl/asr_nl) for the webserv
 
 ### Container without Web Interface
 
-This contains the `asr_nl` models but not the webservice.
-You can pull a prebuilt image from the Docker Hub registry using docker as follows:
+To build a container image with the specified models included:
 
 ```
-$ docker pull proycon/lamachine:kaldi_nl
+$ docker build -t kaldi_nl --build-arg MODELS="utwente radboud_OH radboud_PR radboud_GN" .
+```
+
+However, You can pull a prebuilt image from the Docker Hub registry using docker as follows:
+This contains all the models (but not the webservice).
+
+```
+$ docker pull proycon/kaldi_nl
 ```
 
 You can also build the container image yourself using a tool like ``docker build``, which is the recommended option if you are deploying this
@@ -60,10 +66,10 @@ in your own infrastructure. In that case will want adjust the ``Dockerfile`` to 
 Run the container as follows:
 
 ```
-$ docker run -t -i -v /your/data/path:/data proycon/lamachine:kaldi_nl
+$ docker run -t -i -v /your/data/path:/data proycon/kaldi_nl
 ```
 
-The `decode.sh` command from the next section can be appended to the docker run line.
+The `decode.sh` command (or rather one of its variants) from the next section can be appended directly to the docker run line.
 
 ## Usage
 

@@ -8,7 +8,7 @@ fi
 if [ -d models ] && [ -z "$modelpack" ]; then
     modelpack=$(realpath models)
 elif [ ! -d models/NL ] && [ -z "$modelpack" ]; then
-    while [ $return_value -eq 0 ] && ! readlink -f $modelpack; do
+    while [ $return_value -eq 0 ] && ! readlink -f "$modelpack"; do
         modelpack=$(dialog --stdout --title "Models not found" --inputbox "Enter location to download & store models, do not use ~ " 0 0 "models")
         return_value=$?
     done
