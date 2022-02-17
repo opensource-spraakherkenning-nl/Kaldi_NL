@@ -36,7 +36,7 @@ for model in "$@"; do
             source "contrib/$model/configure_download.sh"
         fi
         for f in contrib/$model/decode*.sh; do
-            ln -s $f $(basename $f)
+            [ -e "$f" ] && ln -s $f $(basename $f)
         done
     else
         echo "Specified model ($model) not found, expected a directory $root/contrib/$model/">&2
