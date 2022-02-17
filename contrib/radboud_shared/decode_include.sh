@@ -49,7 +49,7 @@
 # shellcheck disable=SC1091
 # ^-- don't attempt fo follow includes
 
-VERSION="0.3"
+VERSION="0.4"
 
 # auto-export all variables
 set -a
