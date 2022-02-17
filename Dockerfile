@@ -1,27 +1,54 @@
-FROM proycon/lamachine:core
-MAINTAINER Maarten van Gompel <proycon@anaproy.nl>
-LABEL description="A LaMachine installation with Automatic Speech Recognition for Dutch (command-line usage only)"
+#note: this is the non-GPU function, suitable for production use but less suitable for training!
+FROM debian:11 AS kaldi
+LABEL org.opencontainers.image.authors="Maarten van Gompel <proycon@anaproy.nl>"
+LABEL description="Kaldi_NL"
 
-# (opt-out sending some basic anonymized statistics about the installation)
-#RUN lamachine-config private true
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        g++ \
+        make \
+        automake \
+        autoconf \
+        bzip2 \
+        unzip \
+        wget \
+        sox \
+        libtool \
+        git \
+        subversion \
+        python2.7 \
+        python3 \
+        zlib1g-dev \
+        ca-certificates \
+        gfortran \
+        patch \
+        ffmpeg \
+	vim && \
+    rm -rf /var/lib/apt/lists/*
 
-# (set this to your own)
-#RUN lamachine-config maintainer_name "Your name here"
-#RUN lamachine-config maintainer_mail "your@mail.here"
-
-# (this is the mount point where the external volume can be mounted that holds all user-data for the webservice)
-# (i.e. the input and output files users upload and obtain. Uncomment all this if you want to store the data
-# within the container (not recommended) or if you're not planning on using the webservice anyway)
-VOLUME ["/data"]
-
-# (python-core is only there because we need numpy):
-RUN lamachine-add python-core
-# (this is the backend):
-RUN lamachine-add kaldi_nl
-
-# (this step performs all the actual actions defined above)
-RUN lamachine-update
-
-WORKDIR /usr/local/opt/kaldi_nl
+RUN ln -s /usr/bin/python3 /usr/bin/python
+ENV KALDI_ROOT=/opt/kaldi
+WORKDIR /opt/kaldi/
 CMD /bin/bash -l
 
+#multistage build:
+FROM kaldi
+ARG BRANCH="master"
+ARG MODELS="utwente radboud_OH radboud_PR radboud_GN"
+RUN git clone --depth 1 https://github.com/kaldi-asr/kaldi.git /opt/kaldi
+RUN cd /opt/kaldi/tools && \
+       ./extras/install_mkl.sh && \
+       make -j $(nproc) && \
+       cd /opt/kaldi/src && \
+       ./configure --shared && \
+       make depend -j $(nproc) && \
+       make -j $(nproc) && \
+       find /opt/kaldi -type f \( -name "*.o" -o -name "*.la" -o -name "*.a" \) -exec rm {} \; && \
+       find /opt/intel -type f -name "*.a" -exec rm {} \; && \
+       find /opt/intel -type f -regex '.*\(_mc.?\|_mic\|_thread\|_ilp64\)\.so' -exec rm {} \; && \
+       rm -rf /opt/kaldi/.git
+
+RUN git clone --branch "$BRANCH" https://github.com/opensource-spraakherkenning-nl/Kaldi_NL.git /opt/Kaldi_NL
+RUN cd /opt/Kaldi_NL && ./configure.sh $MODELS
+
+WORKDIR /opt/Kaldi_NL

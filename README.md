@@ -19,10 +19,15 @@ The ``configure.sh`` script will ask for the location of your Kaldi installation
 A ``decode.sh`` script is dynamically generated based on the selected models, as
 are the decoding graphs needed for Kaldi. This last step may take a while (but on a 16GB machine usually no more than an hour or so).
 
-It is also possible to install a completely pre-made decoder, as supplied by certain partners
+It is also possible to install a completely pre-made decoder with models as supplied by certain partners
 in that case you can specify one or more of the following models as a parameter to ``configure.sh``:
 
-* `asr_nl` - **Automatic Speech Recognition for Dutch** - These are models and decoder graphs for oral history interviews (OH), parliamentary talks (PR), and daily conversations (GN) created by Emre Yilmaz, CLST, Radboud University, Nijmegen. A decode script is supplied for for each, respectively named ``decoder_OH.sh``, ``decoder_PR.sh`` and ``decode_GN.sh``.
+* `utwente` - **Starter Pack** - These are the dutch models and decoder graphs originally provided with Kaldi_NL
+* `radboud_OH` - **Oral History** - These are dutch models and decoder graphs trained on oral history interviews
+* `radboud_PR` - **Parliamentary Talks** - These are dutch models and decoder graphs trained on parliamentary talks
+* `radboud_GN` - **Daily Conversation** - These are dutch models and decoder graphs trained on daily conversations
+
+A decode script is supplied for for each, respectively named ``decoder_OH.sh``, ``decoder_PR.sh`` and ``decode_GN.sh``.
 
 Kaldi NL, with all its dependencies, is also included as an optional extra in the [LaMachine
 meta-distribution](https://proycon.github.io/LaMachine) , this may make it more readily usable/deployable by end-users.
@@ -35,9 +40,10 @@ If you encounter any other issues with these script on macOS, please let us know
 
 ### Container with Web Interface
 
-For end-users and hosting partners, we provide a web-interface offering easy access to *Automatic Speech Recognition
-for Dutch* (`asr_nl`). A container image is available to deploy this webservice locally, please see: [Automatic Speech
-Recognition for Dutch](https://github.com/opensource-spraakherkenning-nl/asr_nl) for the webservice source and further instructions.
+For end-users and hosting partners, we provide a web-interface offering easy access to *Automatic Speech Recognition for
+Dutch* (`asr_nl`), containing all the models from Radboud University. A container image is available to deploy this
+webservice locally, please see: [Automatic Speech Recognition for
+Dutch](https://github.com/opensource-spraakherkenning-nl/asr_nl) for the webservice source and further instructions.
 
 ### Container without Web Interface
 
