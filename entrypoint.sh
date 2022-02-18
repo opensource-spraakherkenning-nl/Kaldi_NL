@@ -7,6 +7,7 @@ ARGS="$*"
 if [ -n "$modelpack" ] && [ ! -e "$modelpack/Models" ]; then
     #shellcheck disable=SC2086
     set -- $MODELS
+    export NODOWNLOAD=0
     #shellcheck disable=SC1091
     . local/configure_download.sh
 fi
