@@ -9,6 +9,7 @@ if [ -n "$modelpack" ] && [ ! -e "$modelpack/Models" ]; then
     set -- $MODELS
     export NODOWNLOAD=0
     #shellcheck disable=SC1091
+    echo "Downloading models: $*" >&2
     . local/configure_download.sh
 fi
 

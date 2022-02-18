@@ -5,7 +5,7 @@ if [ $sourced -eq 0 ]; then
 fi
 
 #Set model directory
-if [ -n "$NODOWNLOAD" ]; then
+if [ "$NODOWNLOAD" = "1" ]; then
     [ -z "$modelpack" ] && fatalerror "\$modelpack must be set if \$NODOWNLOAD is set"
 elif [ -d models ] && [ -z "$modelpack" ]; then
     modelpack=$(realpath models)
@@ -27,14 +27,14 @@ fi
 #we need this very ugly patch,
 #creating a symlink back to itself,
 #otherwise certain models break
-if [ ! -e models/Models ] && [ -z "$NODOWNLOAD" ]; then
+if [ ! -e models/Models ] && [ "$NODOWNLOAD" != "1" ]; then
     ln -s "$(realpath models)" models/Models
 fi
 
 # get models
 for model in "$@"; do
     if [ -d "contrib/$model" ]; then
-        if [ -z "$NODOWNLOAD" ] && [ -e "contrib/$model/configure_download.sh" ]; then
+        if [ "$NODOWNLOAD" != "1" ] && [ -e "contrib/$model/configure_download.sh" ]; then
             . "contrib/$model/configure_download.sh"
         fi
         for f in "contrib/$model/decode"*.sh; do
