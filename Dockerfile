@@ -1,4 +1,8 @@
 FROM proycon/kaldi
+LABEL org.opencontainers.image.title="kaldi" \
+      org.opencontainers.image.authors="Maarten van Gompel <proycon@anaproy.nl>" \
+      org.opencontainers.image.description="Kaldi models and scripts for Dutch ASR" \
+      org.opencontainers.image.source="https://github.com/opensource-spraakherkenning-nl/Kaldi_NL/kaldi.Dockerfile"
 ARG BRANCH="master"
 ARG MODELS="utwente radboud_OH radboud_PR radboud_GN"
 ENV MODELS=$MODELS
