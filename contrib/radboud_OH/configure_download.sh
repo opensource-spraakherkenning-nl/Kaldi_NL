@@ -19,6 +19,5 @@ if [ ! -e models/Lang_OH ]; then
     rm kaldi_nl_model_radboud_OH.tar.gz
 
     #correct absolute paths
-    find . -name "*.conf" | xargs sed -i "s|/vol/customopt/kaldi/egs/Kaldi_NL/Models|$modelpack|g"
-    find . -name "*.conf" | xargs sed -i "s|/vol/customopt/kaldi/egs/Kaldi_NL|$root|g" #probably redundant
+    find "$modelpack" -name "*.conf" | xargs sed -i "s|=.*/Models|=$modelpack|g"
 fi

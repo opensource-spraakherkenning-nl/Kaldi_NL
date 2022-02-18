@@ -23,4 +23,4 @@ if [ ! -e models/Patch1 ]; then
 fi
 
 # Correct hardcoded paths in existing configuration files:
-find . -name "*.conf" | xargs sed -i "s|/home/laurensw/Documents/Models|$modelpack|g"
+find "$modelpack" -name "*.conf" | xargs sed -i "s|=.*/Models|=$modelpack|g"
