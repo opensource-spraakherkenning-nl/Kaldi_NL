@@ -47,37 +47,40 @@ Dutch](https://github.com/opensource-spraakherkenning-nl/asr_nl) for the webserv
 
 ### Container without Web Interface
 
-To build a container image with the specified models included:
-
-```
-$ docker build -t kaldi_nl --build-arg MODELS="utwente radboud_OH radboud_PR radboud_GN" .
-```
-
-However, You can pull a prebuilt image from the Docker Hub registry using docker as follows:
+There is a prebuilt image from the Docker Hub registry using docker as follows:
 This contains all the models (but not the webservice).
 
 ```
 $ docker pull proycon/kaldi_nl
 ```
+You can also build the container image yourself using a tool like ``docker build``, which is the recommended option if you are deploying this in your own infrastructure. To build a container image with the specified models included in the image:
 
-You can also build the container image yourself using a tool like ``docker build``, which is the recommended option if you are deploying this
-in your own infrastructure. In that case will want adjust the ``Dockerfile`` to set some parameters.
+```
+$ docker build -t proycon/kaldi -f kaldi.Dockerfile
+$ docker build -t proycon/kaldi_nl --build-arg MODELS="utwente radboud_OH radboud_PR radboud_GN" .
+```
 
-Run the container as follows:
+If you want the models downloaded at run-time onto an external data volume, rather than at build time into the image, then add ``--build-arg MODELPATH=/models`` and later *at runtime* set ``-v /path/to/your/models:/models``.
+
+
+Run the container as follows, you may want replace ``decode_OH.sh`` with another decode script corresponding to your desired model.
 
 ```
 $ docker run -t -i -v /your/data/path:/data proycon/kaldi_nl
 ```
 
-The `decode.sh` command (or rather one of its variants) from the next section can be appended directly to the docker run line.
+The `decode.sh` command (or rather one of its variants) from the next section can be appended directly to the docker run line, e.g.:
 
+```
+$ docker run -t -i -v /your/data/path:/data proycon/kaldi_nl ./decode_OH.sh /data/yourinput.wav /data
+```
 ## Usage
 
 The decode script is called with:
 
 `./decode.sh [options] <speech-dir>|<speech-file>|<txt-file containing list of source material> <output-dir>`
 
-If you want to use one of the pre-built models from `asr_nl`, use `decode_OH.sh` or any of the other options instead of the generic `decode.sh`.
+If you want to use one of the pre-built models, use `decode_OH.sh` or any of the other options instead of the generic `decode.sh`.
 
 All parameters before the last one are automatically interpreted as one of the three types listed above.
 After the process is done, the main results are produced in `<output-dir>/1Best.ctm`. This file contains a list of all

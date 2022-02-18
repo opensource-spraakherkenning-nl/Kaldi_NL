@@ -5,7 +5,9 @@ if [ $sourced -eq 0 ]; then
 fi
 
 #Set model directory
-if [ -d models ] && [ -z "$modelpack" ]; then
+if [ -n "$NODOWNLOAD" ]; then
+    [ -z "$modelpack" ] && fatalerror "\$modelpack must be set if \$NODOWNLOAD is set"
+elif [ -d models ] && [ -z "$modelpack" ]; then
     modelpack=$(realpath models)
 elif [ ! -d models/NL ] && [ -z "$modelpack" ]; then
     while [ $return_value -eq 0 ] && ! readlink -f "$modelpack"; do
@@ -25,18 +27,18 @@ fi
 #we need this very ugly patch,
 #creating a symlink back to itself,
 #otherwise certain models break
-if [ ! -e models/Models ]; then
+if [ ! -e models/Models ] && [ -z "$NODOWNLOAD" ]; then
     ln -s $(realpath models) models/Models
 fi
 
 # get models
 for model in "$@"; do
     if [ -d "contrib/$model" ]; then
-        if [ -e "contrib/$model/configure_download.sh" ]; then
+        if [ -z "$NODOWNLOAD" ] && [ -e "contrib/$model/configure_download.sh" ]; then
             source "contrib/$model/configure_download.sh"
         fi
         for f in contrib/$model/decode*.sh; do
-            [ -e "$f" ] && ln -s $f $(basename $f)
+            [ -e "$f" ] && [ ! -e "$(basename $f)" ] && ln -s "$f" "$(basename $f)"
         done
     else
         echo "Specified model ($model) not found, expected a directory $root/contrib/$model/">&2
