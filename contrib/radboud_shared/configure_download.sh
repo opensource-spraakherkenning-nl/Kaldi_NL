@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 (return 0 2>/dev/null) && sourced=1 || sourced=0
 if [ $sourced -eq 0 ]; then
     echo "this script should not be run directly but through configure.sh in the kaldi_nl root directory">&2
@@ -17,6 +17,6 @@ if [ ! -e models/AM/conf ]; then
     rm kaldi_nl_model_radboud_shared.tar.gz
 
     #correct absolute paths
-    find -name "*.conf" | xargs sed -i "s|/vol/customopt/kaldi/egs/Kaldi_NL/Models|$modelpack|g"
-    find -name "*.conf" | xargs sed -i "s|/vol/customopt/kaldi/egs/Kaldi_NL|$root|g" #probably redundant
+    find . -name "*.conf" | xargs sed -i "s|/vol/customopt/kaldi/egs/Kaldi_NL/Models|$modelpack|g"
+    find . -name "*.conf" | xargs sed -i "s|/vol/customopt/kaldi/egs/Kaldi_NL|$root|g" #probably redundant
 fi

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # -------DO NOT EDIT THIS SCRIPT ----------
 # do not set a hard-coded KALDI_ROOT here!
@@ -11,13 +11,13 @@ if [ -z "$KALDI_ROOT" ]; then
     DOMAIN=$(hostname -d)
     if [ -e "path.$HOST.sh" ]; then
         #source host-specific path.sh
-        source "path.$HOST.sh"
+        . "path.$HOST.sh"
     elif [ -e "path.$DOMAIN.sh" ]; then
         #source domain specific path.sh
-        source "path.$DOMAIN.sh"
+        . "path.$DOMAIN.sh"
     elif [ -e "path.custom.sh" ]; then
         #source custom path.sh
-        source "path.custom.sh"
+        . "path.custom.sh"
     fi
 fi
 if [ -z "$KALDI_ROOT" ]; then

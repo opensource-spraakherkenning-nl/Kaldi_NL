@@ -17,13 +17,13 @@ if [ -z "$KALDI_ROOT" ]; then
     DOMAIN=$(hostname -d)
     if [ -x "path.$HOST.sh" ]; then
         #source host-specific path.sh
-        source "path.$HOST.sh"
+        . "path.$HOST.sh"
     elif [ -x "path.$DOMAIN.sh" ]; then
         #source domain specific path.sh
-        source "path.$DOMAIN.sh"
+        . "path.$DOMAIN.sh"
     elif [ -x "path.custom.sh" ]; then
         #source custom path.sh
-        source "path.custom.sh"
+        . "path.custom.sh"
     fi
     kaldiroot=$KALDI_ROOT
 else
@@ -31,25 +31,25 @@ else
 fi
 return_value=0
 
-if [ ! -d $kaldiroot/egs ]; then
-    while [ ! -d $kaldiroot/egs ] && [ $return_value -eq 0 ]; do
+if [ ! -d "$kaldiroot/egs" ]; then
+    while [ ! -d "$kaldiroot/egs" ] && [ $return_value -eq 0 ]; do
         kaldiroot=$(dialog --stdout --title "KALDI_ROOT not properly set" --inputbox "Enter location of your KALDI installation " 0 0 "$kaldiroot")
         return_value=$?
     done
     [ ! $return_value -eq 0 ] && echo "KALDI_ROOT not set. Cancelling" && exit 1
-    echo -e "#!/bin/sh\nexport KALDI_ROOT=$kaldiroot" > path.$(hostname).sh
+    echo -e "#!/bin/sh\nexport KALDI_ROOT=$kaldiroot" > "path.$(hostname).sh"
 fi
 
 # check for presence of java and available memory
 #
 messages=
-[ $(which sox) ] || messages="${messages}## Warning: SOX not found, please install before using the decode script.\n"
+[ "$(which sox)" ] || messages="${messages}## Warning: SOX not found, please install before using the decode script.\n"
 [ "$(sox -h | grep 'AUDIO FILE FORMATS' | grep ' mp3 ')" ] || messages="${messages}## Warning: mp3 support for SOX is not installed.\n"
-[ $(which time) ] || messages="${messages}## Warning: TIME not found, please install before using the decode script.\n"
-[ $(which java) ] || messages="${messages}## Warning: JAVA not found, please install before using the decode script.\n"
-[ $(which perl) ] || messages="${messages}## Warning: Perl not found, please install before using the decode script.\n"
-[ $(which python3) ] || messages="${messages}## Warning: Python (3+) not found, please install before using the decode script.\n"
-[ $(free -t -m | grep Total | awk '{print $4}') -lt 6000 ] && messages="${messages}## Warning: You have less than 6GB of available memory, this script may hang/crash! Proceed with caution!\n"
+[ "$(which time)" ] || messages="${messages}## Warning: TIME not found, please install before using the decode script.\n"
+[ "$(which java)" ] || messages="${messages}## Warning: JAVA not found, please install before using the decode script.\n"
+[ "$(which perl)" ] || messages="${messages}## Warning: Perl not found, please install before using the decode script.\n"
+[ "$(which python3)" ] || messages="${messages}## Warning: Python (3+) not found, please install before using the decode script.\n"
+[ "$(free -t -m | grep Total | awk '{print $4}')" -lt 6000 ] && messages="${messages}## Warning: You have less than 6GB of available memory, this script may hang/crash! Proceed with caution!\n"
 [ "$messages" ] && dialog --stdout --title "Warnings" --msgbox "Some problems were found:\n${messages}" 0 0
 
 #
@@ -65,12 +65,12 @@ messages=
 #
 # create symlinks to the scripts
 #
-cwd=$(pwd)
-if [ ! -e $root/steps ]; then
-    ln -s -f $kaldiroot/egs/wsj/s5/steps $root/steps || fatalerror "unable to create link to $kaldiroot/egs/wsj/s5/steps in $root"
+#shellcheck disable=SC2154
+if [ ! -e "$root/steps" ]; then #root is defined in parent script
+    ln -s -f "$kaldiroot/egs/wsj/s5/steps" "$root/steps" || fatalerror "unable to create link to $kaldiroot/egs/wsj/s5/steps in $root"
 fi
-if [ ! -e $root/utils ]; then
-    ln -s -f $kaldiroot/egs/wsj/s5/utils $root/utils || fatalerror "unable to create link to $kaldiroot/egs/wsj/s5/utils in $root"
+if [ ! -e "$root/utils" ]; then #root is defined in parent script
+    ln -s -f "$kaldiroot/egs/wsj/s5/utils" "$root/utils" || fatalerror "unable to create link to $kaldiroot/egs/wsj/s5/utils in $root"
 fi
 
 #set permissive permissions

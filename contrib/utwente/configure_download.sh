@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 (return 0 2>/dev/null) && sourced=1 || sourced=0
 if [ $sourced -eq 0 ]; then
     echo "this script should not be run directly but through configure.sh in the kaldi_nl root directory">&2
@@ -23,4 +23,4 @@ if [ ! -e models/Patch1 ]; then
 fi
 
 # Correct hardcoded paths in existing configuration files:
-find -name "*.conf" | xargs sed -i "s|/home/laurensw/Documents/Models|$modelpack|g"
+find . -name "*.conf" | xargs sed -i "s|/home/laurensw/Documents/Models|$modelpack|g"
