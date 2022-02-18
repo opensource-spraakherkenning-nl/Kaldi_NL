@@ -4,11 +4,11 @@
 
 ARGS="$*"
 
-if [ -n "$modelpack" ] || [ ! -e "$modelpack/Models" ]; then
+if [ -n "$modelpack" ] && [ ! -e "$modelpack/Models" ]; then
     #shellcheck disable=SC2086
     set -- $MODELS
     #shellcheck disable=SC1091
-    . configure_download.sh
+    . local/configure_download.sh
 fi
 
 if [ -n "$ARGS" ]; then
