@@ -1,5 +1,5 @@
 #note: this is the non-GPU function, suitable for production use but less suitable for training!
-FROM debian:11
+FROM debian:latest
 LABEL org.opencontainers.image.authors="Maarten van Gompel <proycon@anaproy.nl>"
 LABEL description="Kaldi_NL"
 
