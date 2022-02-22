@@ -4,6 +4,8 @@ if [ $sourced -eq 0 ]; then
     echo "this script should not be run directly but through configure.sh in the kaldi_nl root directory">&2
 fi
 
+. contrib/utwente/configure_download.sh
+
 if [ ! -e models/AM/conf ]; then
     echo "-----------------------------------------------------">&2
     echo "IMPORTANT NOTE: The Radboud models for Dutch ASR that are installable through this Kaldi_NL distribution are licensed under the Creative Commons Attribution-NonCommercial-ShareAlike license (4.0)">&2
