@@ -140,6 +140,7 @@ fi
 if [[ "$result" = *" "* ]]; then
 	die "Output path ($result) may not contain any spaces!"
 fi
+result=${result%/} #remove trailing slash
 [ "$(echo "$inv_acoustic_scale" | wc -w)" -gt 1 ] && miac=true
 [ "$(echo "$word_ins_penalty" | wc -w)" -gt 1 ] && mwip=true
 
