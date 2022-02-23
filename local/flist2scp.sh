@@ -30,6 +30,7 @@ while read line; do
 	lines+=($line)
 done <$1/test.flist
 
+
 # Do diarization.
 # If needed, make a temporary wav file for each input file, as this is what the diarization requires
 numjobs="${#lines[@]}"
@@ -39,6 +40,11 @@ $cmd --max-jobs-run $nj JOB=1:$numjobs $1/ALL/liumlog/segmentation.JOB.log \
     { [ ! -e $1/ALL/liumlog/\$basefile.seg ] \&\& local/diarization.sh $uemopt $1/\$basefile.wav $1/ALL/liumlog 2>&1 \; } \; \
     { [ ! \${line##*.} == \'wav\' ] \&\& rm $1/\${basefile}.wav \; } \; \
 	echo \$line \>\>$1/ALL/liumlog/done.log
+
+if grep -q SEVERE "$1/ALL/liumlog/done.log"; then
+    touch "$1/ALL/liumlog/failed"
+    cat "$1/ALL/liumlog/done.log" >&2
+fi
 
 for basefile in "${basefiles[@]}"; do
 	cat $1/ALL/liumlog/$basefile.seg | grep -v ";;" | awk '{s++; printf "%s.%05d %s %.3f %.3f\n", $1, s, $1, $3/100, ($3+$4)/100}' >>$1/ALL/segments

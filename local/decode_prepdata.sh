@@ -63,22 +63,28 @@ eval $findcmd >$data/test.flist
 
 # prepare data & do diarization
 >$data/ALL/liumlog/done.log
+rm -f "$data/ALL/liumlog/failed" 2> /dev/null #clean after previous run
 eval $timer local/flist2scp.sh $data >>$logging 2>&1 &
 pid=$!
 numfiles=$(cat $data/test.flist | wc -l)
 while kill -0 $pid 2>/dev/null; do
     numsegmented=$(cat $data/ALL/liumlog/done.log | wc -l)
     local/progressbar.sh $numsegmented $numfiles 50 "Diarization"
+    [ -e "$data/ALL/liumlog/failed" ] && break;
     sleep 1
 done
-cat $inter/time.log | awk '{printf( "Diarization completed in %d:%02d:%02d (CPU: %d:%02d:%02d), Memory used: %d MB                \n", int($1/3600), int($1%3600/60), int($1%3600%60), int(($2+$3)/3600), int(($2+$3)%3600/60), int(($2+$3)%3600%60), $4/1000) }'
+if [ -e "$data/ALL/liumlog/failed" ]; then
+    return 1
+else
+    cat $inter/time.log | awk '{printf( "Diarization completed in %d:%02d:%02d (CPU: %d:%02d:%02d), Memory used: %d MB                \n", int($1/3600), int($1%3600/60), int($1%3600%60), int(($2+$3)/3600), int(($2+$3)%3600/60), int(($2+$3)%3600%60), $4/1000) }'
 
-numsegments=$(cat $data/ALL/segments | wc -l)
-plu1=
-plu2=
-[ $numfiles -gt 1 ] && plu1="s"
-[ $numsegments -gt 1 ] && plu2="s"
-echo "Split $numfiles source file${plu1} into $numsegments segment${plu2}                              "
-cat $data/*.glm 2>/dev/null >$data/ALL/all.glm                              # copy any .glm's
-utils/fix_data_dir.sh $data/ALL >>$logging 2>&1
-cp -r $data/ALL/liumlog $result
+    numsegments=$(cat $data/ALL/segments | wc -l)
+    plu1=
+    plu2=
+    [ $numfiles -gt 1 ] && plu1="s"
+    [ $numsegments -gt 1 ] && plu2="s"
+    echo "Split $numfiles source file${plu1} into $numsegments segment${plu2}                              "
+    cat $data/*.glm 2>/dev/null >$data/ALL/all.glm                              # copy any .glm's
+    utils/fix_data_dir.sh $data/ALL >>$logging 2>&1
+    cp -r $data/ALL/liumlog $result
+fi
