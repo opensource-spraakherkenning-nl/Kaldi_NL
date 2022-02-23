@@ -23,25 +23,25 @@ cat $1/*.stm 2>&1 >$1/ALL/ref.stm
 >$1/ALL/utt2spk.tmp
 
 # iterate over list and prepare for each file
-while read line; do	
+while read line; do
 	basefile=$(basename $line .${line##*.})
-	echo "$basefile sox $line -r 16k -e signed-integer -t wav - remix - |" >>$1/ALL/wav.scp 
+	echo "$basefile sox $line -c 1 -r 16000 -b 16 -e signed-integer -t wav - remix - |" >>$1/ALL/wav.scp
 	basefiles+=($basefile)
 	lines+=($line)
 done <$1/test.flist
 
-# Do diarization.   
+# Do diarization.
 # If needed, make a temporary wav file for each input file, as this is what the diarization requires
 numjobs="${#lines[@]}"
 $cmd --max-jobs-run $nj JOB=1:$numjobs $1/ALL/liumlog/segmentation.JOB.log \
     lines=\( ${lines[@]} \)\; basefiles=\( ${basefiles[@]} \)\; idx=JOB\; line=\${lines[\$idx-1]}\; basefile=\${basefiles[\$idx-1]}\; \
-    { [ ! \${line##*.} == \'wav\' ] \&\& sox \$line -t wav $1/\${basefile}.wav \; } \; \
+    { [ ! \${line##*.} == \'wav\' ] \&\& sox \$line -c 1 -r 16000 -b 16 -t wav $1/\${basefile}.wav \; } \; \
     { [ ! -e $1/ALL/liumlog/\$basefile.seg ] \&\& local/diarization.sh $uemopt $1/\$basefile.wav $1/ALL/liumlog 2>&1 \; } \; \
     { [ ! \${line##*.} == \'wav\' ] \&\& rm $1/\${basefile}.wav \; } \; \
 	echo \$line \>\>$1/ALL/liumlog/done.log
-    
+
 for basefile in "${basefiles[@]}"; do
-	cat $1/ALL/liumlog/$basefile.seg | grep -v ";;" | awk '{s++; printf "%s.%05d %s %.3f %.3f\n", $1, s, $1, $3/100, ($3+$4)/100}' >>$1/ALL/segments	
+	cat $1/ALL/liumlog/$basefile.seg | grep -v ";;" | awk '{s++; printf "%s.%05d %s %.3f %.3f\n", $1, s, $1, $3/100, ($3+$4)/100}' >>$1/ALL/segments
 	cat $1/ALL/liumlog/$basefile.seg | grep -v ";;" | awk '{s++; printf "%s.%05d %s-%s\n", $1, s, $1, $NF}' >>$1/ALL/utt2spk.tmp
 done
 
