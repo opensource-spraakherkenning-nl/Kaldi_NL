@@ -16,6 +16,7 @@ RUN apt-get update && \
         unzip \
         wget \
         sox \
+        libsox-fmt-mp3 \
         libtool \
         git \
         subversion \
