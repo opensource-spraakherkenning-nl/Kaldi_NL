@@ -329,7 +329,26 @@ if [ -z "$mwip" ] && [ -z "$miac" ]; then
 	if [ $stage -le 10 ] && [ -s "$result/1Best.ctm" ] && [ -x ./scripts/ctm2xml.py ];
 	then
 		logtitle "Conversion to XML"
-		./scripts/ctm2xml.py "$result" "1Best" "$data" || die "ctm2xml failed"
+        fnamecount=$(cut -d " " -f 1 "$result/1Best.ctm" | sort | uniq | wc -l)
+        if [ "$fnamecount" != "1" ]; then
+            log "XML conversion only implemented for single wav files, skipping..."
+        else
+            fname=$(head -n 1 $result/1Best.ctm | cut -d " " -f 1)
+            if [ -e "$fname.wav" ]; then
+                #ok
+                ./scripts/ctm2xml.py "$result" "1Best" "$data" || die "ctm2xml failed"
+            elif [ -e "$fname.mp3" ]; then
+                #just convert again (bit inefficient but okay..)
+                sox "$fname.mp3" -c 1 -r 16000 -b 16 -e signed-integer -t wav "$fname.wav"
+                ./scripts/ctm2xml.py "$result" "1Best" "$data" || die "ctm2xml failed (mp3)"
+            elif [ -e "$fname.ogg" ]; then
+                #just convert again (bit inefficient but okay..)
+                sox "$fname.ogg" -c 1 -r 16000 -b 16 -e signed-integer -t wav "$fname.wav"
+                ./scripts/ctm2xml.py "$result" "1Best" "$data" || die "ctm2xml failed (ogg)"
+            else
+                log "XML conversion only implemented for single wav files, skipping..."
+            fi
+        fi
 	fi
 
 	## process speaker diarisation output
