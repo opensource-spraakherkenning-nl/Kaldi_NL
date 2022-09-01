@@ -29,10 +29,6 @@ in that case you can specify one or more of the following models as a parameter 
 
 A decode script is supplied for for each, respectively named ``decoder_OH.sh``, ``decoder_PR.sh`` and ``decode_GN.sh``.
 
-Kaldi NL, with all its dependencies, is also included as an optional extra in the [LaMachine
-meta-distribution](https://proycon.github.io/LaMachine) , this may make it more readily usable/deployable by end-users.
-For instance in containerised (e.g. docker) or virtual machine form.
-
 The use of these scripts under macOS is not supported, but we have been able to make them work. Just as with the default
 Kaldi recipes, most issues stem from the use of the standard GNU tools. So use gcp, gawk, gsed, gtime, gfile, etc
 in place of cp, awk, sed, time, and file.
