@@ -4,6 +4,13 @@
 
 ARGS="$*"
 
+DIRNAME="$(dirname "$0")"
+
+if [ ! -e local/settings ] && [ -n "$DIRNAME" ] && [ "$DIRNAME" != "." ]; then
+    #ensure we are in the dir where the script resides
+    cd $DIRNAME
+fi
+
 if [ -n "$modelpack" ] && [ ! -e "$modelpack/Models" ]; then
     #shellcheck disable=SC2086
     set -- $MODELS

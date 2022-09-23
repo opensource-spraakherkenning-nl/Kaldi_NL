@@ -20,4 +20,4 @@ RUN cd /opt/Kaldi_NL &&\
 VOLUME [ "/models" ]
 
 WORKDIR /opt/Kaldi_NL
-ENTRYPOINT [ "./entrypoint.sh" ]
+ENTRYPOINT [ "/opt/Kaldi_NL/entrypoint.sh" ]
