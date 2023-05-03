@@ -331,22 +331,22 @@ if [ -z "$mwip" ] && [ -z "$miac" ]; then
 		logtitle "Conversion to XML"
         fnamecount=$(cut -d " " -f 1 "$result/1Best.ctm" | sort | uniq | wc -l)
         if [ "$fnamecount" != "1" ]; then
-            log "XML conversion only implemented for single wav files, skipping..."
+            log "XML conversion only implemented for single wav files (found $fnamecount instead), skipping..."
         else
-            fname=$(head -n 1 $result/1Best.ctm | cut -d " " -f 1)
-            if [ -e "$fname.wav" ]; then
+            fname=$(head -n 1 "$result/1Best.ctm" | cut -d " " -f 1)
+            if [ -e "$data/$fname.wav" ]; then
                 #ok
                 ./scripts/ctm2xml.py "$result" "1Best" "$data" || die "ctm2xml failed"
-            elif [ -e "$fname.mp3" ]; then
+            elif [ -e "$data/$fname.mp3" ]; then
                 #just convert again (bit inefficient but okay..)
-                sox "$fname.mp3" -c 1 -r 16000 -b 16 -e signed-integer -t wav "$fname.wav"
+                sox "$data/$fname.mp3" -c 1 -r 16000 -b 16 -e signed-integer -t wav "$data/$fname.wav"
                 ./scripts/ctm2xml.py "$result" "1Best" "$data" || die "ctm2xml failed (mp3)"
-            elif [ -e "$fname.ogg" ]; then
+            elif [ -e "$data/$fname.ogg" ]; then
                 #just convert again (bit inefficient but okay..)
-                sox "$fname.ogg" -c 1 -r 16000 -b 16 -e signed-integer -t wav "$fname.wav"
+                sox "$data/$fname.ogg" -c 1 -r 16000 -b 16 -e signed-integer -t wav "$data/$fname.wav"
                 ./scripts/ctm2xml.py "$result" "1Best" "$data" || die "ctm2xml failed (ogg)"
             else
-                log "XML conversion only implemented for single wav files, skipping..."
+                log "XML conversion not implemented for file $fname (can't determine type)..."
             fi
         fi
 	fi
